@@ -1,7 +1,6 @@
 import { createContext, useContext, useState, ReactNode } from "react";
-import { useNavigate } from "react-router-dom";
 
-export type UserRole = "investor" | "builder" | "agent";
+export type UserRole = "user" | "builder" | "agent";
 
 interface User {
   id: string;
@@ -21,11 +20,11 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // Dummy users for each role
 const dummyUsers: Record<UserRole, User> = {
-  investor: {
+  user: {
     id: "1",
-    name: "John Investor",
-    email: "investor@fractoland.com",
-    role: "investor",
+    name: "John User",
+    email: "user@fractoland.com",
+    role: "user",
   },
   builder: {
     id: "2",
