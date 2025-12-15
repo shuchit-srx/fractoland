@@ -2,10 +2,12 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { MapPin, Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
 
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -58,10 +60,10 @@ const Navbar = () => {
 
           {/* CTA */}
           <div className="hidden md:flex items-center gap-4">
-            <Button variant="ghost" size="sm">
+            <Button variant="ghost" size="sm" onClick={() => navigate("/login?role=investor")}>
               Sign In
             </Button>
-            <Button size="sm">
+            <Button size="sm" onClick={() => navigate("/login?role=investor")}>
               Get Started
             </Button>
           </div>
@@ -95,10 +97,10 @@ const Navbar = () => {
                 </a>
               ))}
               <div className="flex flex-col gap-2 pt-4 border-t border-border">
-                <Button variant="ghost" size="sm" className="justify-start">
+                <Button variant="ghost" size="sm" className="justify-start" onClick={() => { setIsMobileMenuOpen(false); navigate("/login?role=investor"); }}>
                   Sign In
                 </Button>
-                <Button size="sm">
+                <Button size="sm" onClick={() => { setIsMobileMenuOpen(false); navigate("/login?role=investor"); }}>
                   Get Started
                 </Button>
               </div>
