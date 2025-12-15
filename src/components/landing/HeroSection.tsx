@@ -1,8 +1,11 @@
 import { motion } from "framer-motion";
 import { MapPin, Shield, Coins, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
 
 const HeroSection = () => {
+  const navigate = useNavigate();
+  
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-background">
       {/* Subtle background pattern */}
@@ -66,11 +69,11 @@ const HeroSection = () => {
             transition={{ duration: 0.6, delay: 0.3 }}
             className="flex flex-col sm:flex-row gap-4 justify-center items-center"
           >
-            <Button variant="hero" size="lg">
+            <Button variant="hero" size="lg" onClick={() => navigate("/login?role=investor")}>
               Login
               <ArrowRight className="w-5 h-5" />
             </Button>
-            <Button variant="hero-outline" size="lg">
+            <Button variant="hero-outline" size="lg" onClick={() => document.getElementById("investors")?.scrollIntoView({ behavior: "smooth" })}>
               Explore Platform
             </Button>
           </motion.div>

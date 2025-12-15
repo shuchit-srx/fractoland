@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { User, Building2, Users, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
 
 const loginTypes = [
   {
@@ -8,22 +9,27 @@ const loginTypes = [
     title: "User / Investor",
     description: "Browse lands, invest in tokenized parcels, track your portfolio, and participate in governance voting.",
     features: ["View verified lands", "Invest with fiat", "Track ROI", "Vote on decisions"],
+    role: "investor",
   },
   {
     icon: Building2,
     title: "Builder / Developer",
     description: "Access land parcels for development, submit bids, and manage your construction projects.",
     features: ["Browse available lands", "Submit purchase bids", "Track project status", "Manage approvals"],
+    role: "builder",
   },
   {
     icon: Users,
     title: "Agent",
     description: "Refer investors to the platform, manage your network, and earn commissions on successful investments.",
     features: ["Generate referral links", "Track investor activity", "Earn commissions", "Withdraw earnings"],
+    role: "agent",
   },
 ];
 
 const LoginSelection = () => {
+  const navigate = useNavigate();
+
   return (
     <section className="py-24 bg-background relative">
       <div className="container px-4 md:px-6">
@@ -82,7 +88,7 @@ const LoginSelection = () => {
                 </ul>
 
                 {/* CTA */}
-                <Button variant="card" className="mt-auto">
+                <Button variant="card" className="mt-auto" onClick={() => navigate(`/login?role=${type.role}`)}>
                   Continue
                   <ArrowRight className="w-4 h-4" />
                 </Button>
