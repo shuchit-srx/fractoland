@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, ReactNode } from "react";
 
-export type UserRole = "user" | "builder" | "agent";
+export type UserRole = "user" | "builder" | "agent" | "owner";
 
 interface User {
   id: string;
@@ -38,12 +38,22 @@ const dummyUsers: Record<UserRole, User> = {
     email: "agent@fractoland.com",
     role: "agent",
   },
+  owner: {
+    id: "4",
+    name: "Lena Landowner",
+    email: "owner@fractoland.com",
+    role: "owner",
+  },
 };
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(() => {
-    const stored = localStorage.getItem("fractoland_user");
-    return stored ? JSON.parse(stored) : null;
+    try {
+      const stored = localStorage.getItem("fractoland_user");
+      return stored ? JSON.parse(stored) : null;
+    } catch {
+      return null;
+    }
   });
 
   const login = async (email: string, password: string, role: UserRole): Promise<boolean> => {
@@ -52,9 +62,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     
     // Dummy validation - accept any email/password
     const loggedInUser = dummyUsers[role];
-    setUser({ ...loggedInUser, email });
-    localStorage.setItem("fractoland_user", JSON.stringify({ ...loggedInUser, email }));
-    return true;
+    const userData = { ...loggedInUser, email };
+    
+    // Set localStorage first, then state
+    localStorage.setItem("fractoland_user", JSON.stringify(userData));
+    setUser(userData);
+    
+    // Ensure state is updated
+    return new Promise((resolve) => {
+      setTimeout(() => resolve(true), 0);
+    });
   };
 
   const logout = () => {

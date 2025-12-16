@@ -69,12 +69,12 @@ const HeroSection = () => {
             transition={{ duration: 0.6, delay: 0.3 }}
             className="flex flex-col sm:flex-row gap-4 justify-center items-center"
           >
-            <Button variant="hero" size="lg" onClick={() => navigate("/login?role=investor")}>
-              Login
+            <Button variant="hero" size="lg" onClick={() => navigate("/register?role=user")}>
+              Get Started
               <ArrowRight className="w-5 h-5" />
             </Button>
-            <Button variant="hero-outline" size="lg" onClick={() => document.getElementById("investors")?.scrollIntoView({ behavior: "smooth" })}>
-              Explore Platform
+            <Button variant="hero-outline" size="lg" onClick={() => navigate("/login?role=user")}>
+              Sign In
             </Button>
           </motion.div>
 

@@ -167,7 +167,13 @@ const MyBids = () => {
                       {bid.status === "outbid" && (
                         <Button size="sm">Increase Bid</Button>
                       )}
-                      <Button size="sm" variant="outline">View Details</Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => navigate(`/dashboard/builder/bid/${bid.id}`)}
+                      >
+                        View Details
+                      </Button>
                     </div>
                   </div>
                 </motion.div>
@@ -217,7 +223,13 @@ const MyBids = () => {
                             </Button>
                           )}
                           {bid.status === "rejected" && (
-                            <Button size="sm" variant="outline">View Details</Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => navigate(`/dashboard/builder/bid/${bid.id}`)}
+                          >
+                            View Details
+                          </Button>
                           )}
                         </td>
                       </tr>

@@ -65,7 +65,7 @@ const InvestorDashboard = () => {
           <div className="lg:col-span-2 bg-card rounded-2xl border border-border p-6 shadow-card">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-semibold text-foreground">Your Investments</h2>
-              <Button variant="ghost" size="sm" onClick={() => navigate("/dashboard/investor/portfolio")}>
+              <Button variant="ghost" size="sm" onClick={() => navigate("/dashboard/user/portfolio")}>
                 View All <ArrowRight className="w-4 h-4 ml-1" />
               </Button>
             </div>
@@ -100,7 +100,7 @@ const InvestorDashboard = () => {
           <div className="bg-card rounded-2xl border border-border p-6 shadow-card">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-semibold text-foreground">Pending Votes</h2>
-              <Button variant="ghost" size="sm" onClick={() => navigate("/dashboard/investor/voting")}>
+              <Button variant="ghost" size="sm" onClick={() => navigate("/dashboard/user/voting")}>
                 View All
               </Button>
             </div>
@@ -130,15 +130,15 @@ const InvestorDashboard = () => {
         <div className="bg-card rounded-2xl border border-border p-6 shadow-card">
           <h2 className="text-xl font-semibold text-foreground mb-4">Quick Actions</h2>
           <div className="flex flex-wrap gap-4">
-            <Button onClick={() => navigate("/dashboard/investor/explore")}>
+            <Button onClick={() => navigate("/dashboard/user/explore")}>
               <MapPin className="w-4 h-4 mr-2" />
               Explore New Lands
             </Button>
-            <Button variant="outline" onClick={() => navigate("/dashboard/investor/wallet")}>
+            <Button variant="outline" onClick={() => navigate("/dashboard/user/wallet")}>
               <Wallet className="w-4 h-4 mr-2" />
               Add Funds
             </Button>
-            <Button variant="outline" onClick={() => navigate("/dashboard/investor/portfolio")}>
+            <Button variant="outline" onClick={() => navigate("/dashboard/user/portfolio")}>
               <TrendingUp className="w-4 h-4 mr-2" />
               View Portfolio
             </Button>
