@@ -24,6 +24,9 @@ import AvailableLands from "./pages/dashboard/builder/AvailableLands";
 import MyBids from "./pages/dashboard/builder/MyBids";
 import Projects from "./pages/dashboard/builder/Projects";
 import BuilderBidDetail from "./pages/dashboard/builder/BuilderBidDetail";
+import BuilderPayments from "./pages/dashboard/builder/BuilderPayments";
+import BuilderNotifications from "./pages/dashboard/builder/BuilderNotifications";
+import BuilderProfile from "./pages/dashboard/builder/BuilderProfile";
 import OwnerDeveloperBids from "./pages/dashboard/OwnerDeveloperBids";
 import OwnerDashboard from "./pages/dashboard/OwnerDashboard";
 import OwnerLands from "./pages/dashboard/OwnerLands";
@@ -68,6 +71,9 @@ const App = () => (
             <Route path="/dashboard/builder/bids" element={<MyBids />} />
             <Route path="/dashboard/builder/projects" element={<Projects />} />
             <Route path="/dashboard/builder/bid/:id" element={<BuilderBidDetail />} />
+            <Route path="/dashboard/builder/payments" element={<BuilderPayments />} />
+            <Route path="/dashboard/builder/notifications" element={<BuilderNotifications />} />
+            <Route path="/dashboard/builder/profile" element={<BuilderProfile />} />
             
             {/* Land Owner Routes */}
             <Route path="/dashboard/owner" element={<OwnerDashboard />} />
