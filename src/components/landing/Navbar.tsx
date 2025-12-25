@@ -1,7 +1,13 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { MapPin, Menu, X } from "lucide-react";
+import { MapPin, Menu, X, User, Building2, Users, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useNavigate } from "react-router-dom";
 
 const Navbar = () => {
@@ -60,10 +66,33 @@ const Navbar = () => {
 
           {/* CTA */}
           <div className="hidden md:flex items-center gap-4">
-            <Button variant="ghost" size="sm" onClick={() => navigate("/login?role=investor")}>
-              Sign In
-            </Button>
-            <Button size="sm" onClick={() => navigate("/login?role=investor")}>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="gap-2">
+                  Sign In
+                  <ChevronDown className="w-4 h-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-52">
+                <DropdownMenuItem onClick={() => navigate("/login?role=user")} className="cursor-pointer">
+                  <User className="w-4 h-4 mr-2" />
+                  <span>User</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("/login?role=builder")} className="cursor-pointer">
+                  <Building2 className="w-4 h-4 mr-2" />
+                  <span>Builder</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("/login?role=owner")} className="cursor-pointer">
+                  <Building2 className="w-4 h-4 mr-2" />
+                  <span>Land Owner</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("/login?role=agent")} className="cursor-pointer">
+                  <Users className="w-4 h-4 mr-2" />
+                  <span>Agent</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <Button size="sm" onClick={() => navigate("/register?role=user")}>
               Get Started
             </Button>
           </div>
@@ -97,10 +126,26 @@ const Navbar = () => {
                 </a>
               ))}
               <div className="flex flex-col gap-2 pt-4 border-t border-border">
-                <Button variant="ghost" size="sm" className="justify-start" onClick={() => { setIsMobileMenuOpen(false); navigate("/login?role=investor"); }}>
-                  Sign In
-                </Button>
-                <Button size="sm" onClick={() => { setIsMobileMenuOpen(false); navigate("/login?role=investor"); }}>
+                <div className="flex flex-col gap-1">
+                  <p className="text-xs text-muted-foreground px-2 mb-1">Sign In as:</p>
+                  <Button variant="ghost" size="sm" className="justify-start" onClick={() => { setIsMobileMenuOpen(false); navigate("/login?role=user"); }}>
+                    <User className="w-4 h-4 mr-2" />
+                    User
+                  </Button>
+                  <Button variant="ghost" size="sm" className="justify-start" onClick={() => { setIsMobileMenuOpen(false); navigate("/login?role=builder"); }}>
+                    <Building2 className="w-4 h-4 mr-2" />
+                    Builder
+                  </Button>
+                  <Button variant="ghost" size="sm" className="justify-start" onClick={() => { setIsMobileMenuOpen(false); navigate("/login?role=owner"); }}>
+                    <Building2 className="w-4 h-4 mr-2" />
+                    Land Owner
+                  </Button>
+                  <Button variant="ghost" size="sm" className="justify-start" onClick={() => { setIsMobileMenuOpen(false); navigate("/login?role=agent"); }}>
+                    <Users className="w-4 h-4 mr-2" />
+                    Agent
+                  </Button>
+                </div>
+                <Button size="sm" onClick={() => { setIsMobileMenuOpen(false); navigate("/register?role=user"); }}>
                   Get Started
                 </Button>
               </div>

@@ -2,7 +2,7 @@
 
 Invest in verified land parcels with fiat currency. Own tokenized land portions, participate in governance, and earn returns — all secured by blockchain technology.
 
-## Project info
+This repository contains the React frontend for the **FractoLand** platform.
 
 This project is a React application built with Vite, TypeScript, and Tailwind CSS.
 

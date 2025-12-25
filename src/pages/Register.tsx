@@ -1,7 +1,7 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
-import { MapPin, Mail, Lock, ArrowLeft, User, Building2, Users, Eye, EyeOff, Loader2 } from "lucide-react";
+import { motion } from "framer-motion";
+import { MapPin, Mail, Lock, ArrowLeft, User, Building2, Users, Eye, EyeOff, Phone, Loader2, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth, UserRole } from "@/contexts/AuthContext";
@@ -10,69 +10,105 @@ import { toast } from "sonner";
 const roleConfig = {
   user: {
     icon: User,
-    title: "User Login",
-    description: "Access your investment portfolio and explore land opportunities",
+    title: "User Registration",
+    description: "Create your account to start investing in fractional land ownership",
     gradient: "from-blue-500/20 to-cyan-500/20",
     iconBg: "bg-blue-500/10 text-blue-600",
   },
   builder: {
     icon: Building2,
-    title: "Builder Login",
-    description: "Manage your development projects and land bids",
+    title: "Builder Registration",
+    description: "Join as a builder to manage development projects and land bids",
     gradient: "from-green-500/20 to-emerald-500/20",
     iconBg: "bg-green-500/10 text-green-600",
   },
   agent: {
     icon: Users,
-    title: "Agent Login",
-    description: "Track your referrals and manage earnings",
+    title: "Agent Registration",
+    description: "Become an agent and earn commissions by referring investors",
     gradient: "from-purple-500/20 to-violet-500/20",
     iconBg: "bg-purple-500/10 text-purple-600",
   },
   owner: {
     icon: Building2,
-    title: "Land Owner Login",
-    description: "Manage your listed lands, tokens, and exit requests",
+    title: "Land Owner Registration",
+    description: "Register as a land owner to list and manage your properties",
     gradient: "from-slate-500/20 to-zinc-500/20",
     iconBg: "bg-zinc-500/10 text-zinc-700",
   },
 };
 
-const Login = () => {
+const Register = () => {
   const [searchParams] = useSearchParams();
   const role = (searchParams.get("role") as UserRole) || "user";
   const navigate = useNavigate();
   const { login } = useAuth();
 
-  const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [focusedField, setFocusedField] = useState<string | null>(null);
-  const emailRef = useRef<HTMLInputElement>(null);
-  const passwordRef = useRef<HTMLInputElement>(null);
+  const [passwordStrength, setPasswordStrength] = useState(0);
 
   const config = roleConfig[role];
   const Icon = config.icon;
 
+  const calculatePasswordStrength = (pwd: string) => {
+    let strength = 0;
+    if (pwd.length >= 6) strength += 1;
+    if (pwd.length >= 8) strength += 1;
+    if (/[A-Z]/.test(pwd)) strength += 1;
+    if (/[0-9]/.test(pwd)) strength += 1;
+    if (/[^A-Za-z0-9]/.test(pwd)) strength += 1;
+    return strength;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validation
+    if (!name.trim()) {
+      toast.error("Please enter your full name");
+      return;
+    }
+    
+    if (!email.trim()) {
+      toast.error("Please enter your email");
+      return;
+    }
+    
+    if (password.length < 6) {
+      toast.error("Password must be at least 6 characters");
+      return;
+    }
+    
+    if (password !== confirmPassword) {
+      toast.error("Passwords do not match");
+      return;
+    }
+    
+    if (!phone.trim()) {
+      toast.error("Please enter your phone number");
+      return;
+    }
+
     setIsLoading(true);
 
     try {
-      const success = await login(email || `demo@${role}.com`, password || "demo123", role);
+      const success = await login(email, password, role);
       if (success) {
-        toast.success(isLogin ? "Login successful!" : "Registration successful!");
-        // Wait a bit to ensure state is updated
+        toast.success("Registration successful! Welcome to FractoLand!");
         setTimeout(() => {
           navigate(`/dashboard/${role}`);
         }, 100);
       }
     } catch (error) {
-      toast.error("Authentication failed. Please try again.");
+      toast.error("Registration failed. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -124,7 +160,7 @@ const Login = () => {
               <span className="text-3xl font-bold text-foreground">FractoLand</span>
             </a>
             <h2 className="text-4xl font-bold text-foreground mb-4 leading-tight">
-              Fractional Land Ownership Made Simple
+              Start Your Investment Journey
             </h2>
             <p className="text-muted-foreground text-lg leading-relaxed">
               Join thousands of users, builders, and agents on the most trusted
@@ -161,7 +197,7 @@ const Login = () => {
         </div>
       </div>
 
-      {/* Right side - Auth Form */}
+      {/* Right side - Registration Form */}
       <div className="w-full lg:w-1/2 flex items-center justify-center p-6 md:p-12">
         <motion.div
           initial={{ opacity: 0, x: 20 }}
@@ -177,10 +213,10 @@ const Login = () => {
             <Button
               variant="ghost"
               className="mb-6 group"
-              onClick={() => navigate("/")}
+              onClick={() => navigate("/login")}
             >
               <ArrowLeft className="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform" />
-              Back to Home
+              Back to Login
             </Button>
           </motion.div>
 
@@ -200,29 +236,15 @@ const Login = () => {
             <span className="text-sm font-medium">{config.title}</span>
           </motion.div>
 
-          <motion.h1
-            key={isLogin ? "login" : "register"}
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
-            className="text-3xl font-bold text-foreground mb-2"
-          >
-            {isLogin ? "Welcome back" : "Create account"}
-          </motion.h1>
-          <motion.p
-            key={isLogin ? "login-desc" : "register-desc"}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.3, delay: 0.1 }}
-            className="text-muted-foreground mb-6"
-          >
-            {config.description}
-          </motion.p>
+          <h1 className="text-3xl font-bold text-foreground mb-2">
+            Create your account
+          </h1>
+          <p className="text-muted-foreground mb-6">{config.description}</p>
 
           {/* Switch role - Moved above form */}
           <div className="mb-6 pb-6 border-b border-border">
             <p className="text-sm text-muted-foreground mb-4 text-center">
-              {isLogin ? "Login" : "Register"} as different role:
+              Register as different role:
             </p>
             <div className="flex gap-2 justify-center">
               {(["user", "builder", "agent", "owner"] as UserRole[]).map((r, index) => (
@@ -237,7 +259,7 @@ const Login = () => {
                   <Button
                     variant={r === role ? "default" : "outline"}
                     size="sm"
-                    onClick={() => navigate(`/${isLogin ? "login" : "register"}?role=${r}`)}
+                    onClick={() => navigate(`/register?role=${r}`)}
                     className="transition-all"
                   >
                     {r.charAt(0).toUpperCase() + r.slice(1)}
@@ -247,74 +269,45 @@ const Login = () => {
             </div>
           </div>
 
-          {/* Toggle Login/Register */}
-          <div className="flex bg-secondary rounded-full p-1 mb-8 relative">
-            <motion.div
-              className="absolute top-1 bottom-1 bg-background rounded-full shadow-sm"
-              initial={false}
-              animate={{
-                left: isLogin ? "4px" : "50%",
-                width: "calc(50% - 4px)",
-              }}
-              transition={{ type: "spring", stiffness: 500, damping: 30 }}
-            />
-            <button
-              onClick={() => setIsLogin(true)}
-              className={`relative z-10 flex-1 py-2.5 text-sm font-medium rounded-full transition-colors ${
-                isLogin ? "text-foreground" : "text-muted-foreground"
-              }`}
-            >
-              Login
-            </button>
-            <button
-              onClick={() => setIsLogin(false)}
-              className={`relative z-10 flex-1 py-2.5 text-sm font-medium rounded-full transition-colors ${
-                !isLogin ? "text-foreground" : "text-muted-foreground"
-              }`}
-            >
-              Register
-            </button>
-          </div>
-
           <form onSubmit={handleSubmit} className="space-y-5">
-            <AnimatePresence mode="wait">
-              {!isLogin && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              className="space-y-2"
+            >
+              <label className="text-sm font-medium text-foreground">Full Name</label>
+              <motion.div
+                className="relative"
+                whileFocus={{ scale: 1.01 }}
+                transition={{ type: "spring", stiffness: 400 }}
+              >
                 <motion.div
-                  key="name-field"
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  exit={{ opacity: 0, height: 0 }}
-                  transition={{ duration: 0.3 }}
-                  className="space-y-2 overflow-hidden"
+                  animate={{
+                    color: focusedField === "name" ? "hsl(var(--primary))" : "hsl(var(--muted-foreground))",
+                  }}
                 >
-                  <label className="text-sm font-medium text-foreground">Full Name</label>
-                  <motion.div
-                    className="relative"
-                    whileFocus={{ scale: 1.01 }}
-                    transition={{ type: "spring", stiffness: 400 }}
-                  >
-                    <motion.div
-                      animate={{
-                        color: focusedField === "name" ? "hsl(var(--primary))" : "hsl(var(--muted-foreground))",
-                      }}
-                    >
-                      <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 transition-colors" />
-                    </motion.div>
-                    <Input
-                      type="text"
-                      placeholder="Enter your full name"
-                      className="pl-10 h-12 transition-all focus:ring-2 focus:ring-primary/20"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      onFocus={() => setFocusedField("name")}
-                      onBlur={() => setFocusedField(null)}
-                    />
-                  </motion.div>
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 transition-colors" />
                 </motion.div>
-              )}
-            </AnimatePresence>
+                <Input
+                  type="text"
+                  placeholder="Enter your full name"
+                  className="pl-10 h-12 transition-all focus:ring-2 focus:ring-primary/20"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  onFocus={() => setFocusedField("name")}
+                  onBlur={() => setFocusedField(null)}
+                  required
+                />
+              </motion.div>
+            </motion.div>
 
-            <div className="space-y-2">
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="space-y-2"
+            >
               <label className="text-sm font-medium text-foreground">Email</label>
               <motion.div
                 className="relative"
@@ -329,7 +322,6 @@ const Login = () => {
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 transition-colors" />
                 </motion.div>
                 <Input
-                  ref={emailRef}
                   type="email"
                   placeholder="Enter your email"
                   className="pl-10 h-12 transition-all focus:ring-2 focus:ring-primary/20"
@@ -337,49 +329,64 @@ const Login = () => {
                   onChange={(e) => setEmail(e.target.value)}
                   onFocus={() => setFocusedField("email")}
                   onBlur={() => setFocusedField(null)}
+                  required
                 />
               </motion.div>
-            </div>
+            </motion.div>
 
-            <AnimatePresence mode="wait">
-              {!isLogin && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              className="space-y-2"
+            >
+              <label className="text-sm font-medium text-foreground">Phone Number</label>
+              <motion.div
+                className="relative"
+                whileFocus={{ scale: 1.01 }}
+                transition={{ type: "spring", stiffness: 400 }}
+              >
                 <motion.div
-                  key="phone-field"
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  exit={{ opacity: 0, height: 0 }}
-                  transition={{ duration: 0.3 }}
-                  className="space-y-2 overflow-hidden"
+                  animate={{
+                    color: focusedField === "phone" ? "hsl(var(--primary))" : "hsl(var(--muted-foreground))",
+                  }}
                 >
-                  <label className="text-sm font-medium text-foreground">Phone Number</label>
-                  <motion.div
-                    className="relative"
-                    whileFocus={{ scale: 1.01 }}
-                    transition={{ type: "spring", stiffness: 400 }}
-                  >
-                    <motion.div
-                      animate={{
-                        color: focusedField === "phone" ? "hsl(var(--primary))" : "hsl(var(--muted-foreground))",
-                      }}
-                    >
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm transition-colors">+91</span>
-                    </motion.div>
-                    <Input
-                      type="tel"
-                      placeholder="Enter phone number"
-                      className="pl-12 h-12 transition-all focus:ring-2 focus:ring-primary/20"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      onFocus={() => setFocusedField("phone")}
-                      onBlur={() => setFocusedField(null)}
-                    />
-                  </motion.div>
+                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 transition-colors" />
+                  <span className="absolute left-10 top-1/2 -translate-y-1/2 text-sm transition-colors">+91</span>
                 </motion.div>
-              )}
-            </AnimatePresence>
+                <Input
+                  type="tel"
+                  placeholder="Enter phone number"
+                  className="pl-16 h-12 transition-all focus:ring-2 focus:ring-primary/20"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  onFocus={() => setFocusedField("phone")}
+                  onBlur={() => setFocusedField(null)}
+                  required
+                />
+              </motion.div>
+            </motion.div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">Password</label>
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+              className="space-y-2"
+            >
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-medium text-foreground">Password</label>
+                {password.length > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="flex items-center gap-1 text-xs"
+                  >
+                    <span className={`${passwordStrength >= 3 ? "text-green-600" : passwordStrength >= 2 ? "text-yellow-600" : "text-red-600"}`}>
+                      {passwordStrength >= 3 ? "Strong" : passwordStrength >= 2 ? "Medium" : "Weak"}
+                    </span>
+                  </motion.div>
+                )}
+              </div>
               <motion.div
                 className="relative"
                 whileFocus={{ scale: 1.01 }}
@@ -393,14 +400,18 @@ const Login = () => {
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 transition-colors" />
                 </motion.div>
                 <Input
-                  ref={passwordRef}
                   type={showPassword ? "text" : "password"}
-                  placeholder="Enter your password"
+                  placeholder="Create a password"
                   className="pl-10 pr-10 h-12 transition-all focus:ring-2 focus:ring-primary/20"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    setPasswordStrength(calculatePasswordStrength(e.target.value));
+                  }}
                   onFocus={() => setFocusedField("password")}
                   onBlur={() => setFocusedField(null)}
+                  required
+                  minLength={6}
                 />
                 <motion.button
                   type="button"
@@ -412,15 +423,96 @@ const Login = () => {
                   {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </motion.button>
               </motion.div>
-            </div>
+              {password.length > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  className="mt-2"
+                >
+                  <div className="flex gap-1">
+                    {[1, 2, 3, 4, 5].map((level) => (
+                      <motion.div
+                        key={level}
+                        className="h-1 flex-1 rounded-full bg-secondary"
+                        initial={{ scaleX: 0 }}
+                        animate={{
+                          scaleX: passwordStrength >= level ? 1 : 0,
+                          backgroundColor:
+                            passwordStrength >= 4
+                              ? "hsl(142, 70%, 45%)"
+                              : passwordStrength >= 3
+                              ? "hsl(45, 93%, 47%)"
+                              : passwordStrength >= 2
+                              ? "hsl(38, 92%, 50%)"
+                              : "hsl(0, 72%, 51%)",
+                        }}
+                        transition={{ duration: 0.3 }}
+                      />
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+            </motion.div>
 
-            {isLogin && (
-              <div className="flex justify-end">
-                <button type="button" className="text-sm text-primary hover:underline">
-                  Forgot password?
-                </button>
-              </div>
-            )}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5 }}
+              className="space-y-2"
+            >
+              <label className="text-sm font-medium text-foreground">Confirm Password</label>
+              <motion.div
+                className="relative"
+                whileFocus={{ scale: 1.01 }}
+                transition={{ type: "spring", stiffness: 400 }}
+              >
+                <motion.div
+                  animate={{
+                    color: focusedField === "confirmPassword" ? "hsl(var(--primary))" : "hsl(var(--muted-foreground))",
+                  }}
+                >
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 transition-colors" />
+                </motion.div>
+                <Input
+                  type={showConfirmPassword ? "text" : "password"}
+                  placeholder="Confirm your password"
+                  className="pl-10 pr-10 h-12 transition-all focus:ring-2 focus:ring-primary/20"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  onFocus={() => setFocusedField("confirmPassword")}
+                  onBlur={() => setFocusedField(null)}
+                  required
+                  minLength={6}
+                />
+                {confirmPassword && password === confirmPassword && (
+                  <motion.div
+                    initial={{ scale: 0, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    className="absolute right-10 top-1/2 -translate-y-1/2"
+                  >
+                    <CheckCircle2 className="w-5 h-5 text-green-600" />
+                  </motion.div>
+                )}
+                <motion.button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                >
+                  {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                </motion.button>
+              </motion.div>
+              {confirmPassword && password !== confirmPassword && (
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="text-xs text-red-600"
+                >
+                  Passwords do not match
+                </motion.p>
+              )}
+            </motion.div>
 
             <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
               <Button
@@ -442,35 +534,20 @@ const Login = () => {
                 )}
                 <span className="relative z-10 flex items-center justify-center gap-2">
                   {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
-                  {isLoading ? "Please wait..." : isLogin ? "Sign In" : "Create Account"}
+                  {isLoading ? "Creating account..." : "Create Account"}
                 </span>
               </Button>
             </motion.div>
 
             <p className="text-center text-sm text-muted-foreground">
-              {isLogin ? (
-                <>
-                  Don't have an account?{" "}
-                  <button
-                    type="button"
-                    onClick={() => navigate(`/register?role=${role}`)}
-                    className="text-primary hover:underline font-medium"
-                  >
-                    Create one
-                  </button>
-                </>
-              ) : (
-                <>
-                  Already have an account?{" "}
-                  <button
-                    type="button"
-                    onClick={() => navigate(`/login?role=${role}`)}
-                    className="text-primary hover:underline font-medium"
-                  >
-                    Sign in
-                  </button>
-                </>
-              )}
+              Already have an account?{" "}
+              <button
+                type="button"
+                onClick={() => navigate(`/login?role=${role}`)}
+                className="text-primary hover:underline font-medium"
+              >
+                Sign in
+              </button>
             </p>
           </form>
         </motion.div>
@@ -479,4 +556,5 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default Register;
+

@@ -1,5 +1,14 @@
 import { motion } from "framer-motion";
 import { MapPin, TrendingUp, Clock, ArrowUpRight, Download, Filter } from "lucide-react";
+import {
+  ResponsiveContainer,
+  AreaChart,
+  Area,
+  CartesianGrid,
+  XAxis,
+  YAxis,
+  Tooltip,
+} from "recharts";
 import { Button } from "@/components/ui/button";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { useNavigate } from "react-router-dom";
@@ -9,6 +18,17 @@ const portfolioStats = [
   { label: "Current Value", value: "₹6,25,000", change: "+13.6%" },
   { label: "Active Investments", value: "4", change: "Across 3 cities" },
   { label: "Tokens Owned", value: "22", change: "In 4 lands" },
+];
+
+const portfolioHistory = [
+  { month: "Jan", value: 480000 },
+  { month: "Feb", value: 495000 },
+  { month: "Mar", value: 510000 },
+  { month: "Apr", value: 530000 },
+  { month: "May", value: 555000 },
+  { month: "Jun", value: 575000 },
+  { month: "Jul", value: 595000 },
+  { month: "Aug", value: 625000 },
 ];
 
 const investments = [
@@ -105,15 +125,60 @@ const Portfolio = () => {
           ))}
         </div>
 
-        {/* Portfolio Value Chart Placeholder */}
+        {/* Portfolio Value Chart */}
         <div className="bg-card rounded-2xl border border-border p-6">
           <h2 className="text-lg font-semibold text-foreground mb-4">Portfolio Performance</h2>
-          <div className="h-48 bg-gradient-to-r from-primary/5 to-primary/10 rounded-xl flex items-center justify-center">
-            <div className="text-center">
-              <TrendingUp className="w-12 h-12 text-primary/40 mx-auto mb-2" />
-              <p className="text-muted-foreground">Portfolio value chart</p>
-              <p className="text-sm text-muted-foreground">+13.6% overall growth</p>
+          <div className="h-64 rounded-xl bg-muted/40 px-4 py-2 flex flex-col gap-4">
+            <div className="flex items-center justify-between text-xs text-muted-foreground px-1">
+              <span>Last 8 months</span>
+              <span className="flex items-center gap-1 font-medium text-foreground">
+                <TrendingUp className="w-3 h-3" />
+                +13.6% overall growth
+              </span>
             </div>
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={portfolioHistory} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="portfolioFill" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#000000" stopOpacity={0.25} />
+                    <stop offset="100%" stopColor="#000000" stopOpacity={0.02} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" vertical={false} />
+                <XAxis
+                  dataKey="month"
+                  tickLine={false}
+                  axisLine={false}
+                  tick={{ fontSize: 11, fill: "rgba(0,0,0,0.6)" }}
+                />
+                <YAxis
+                  tickLine={false}
+                  axisLine={false}
+                  tick={{ fontSize: 11, fill: "rgba(0,0,0,0.6)" }}
+                  tickFormatter={(val: number) => `₹${Math.round(val / 1000)}k`}
+                />
+                <Tooltip
+                  cursor={{ stroke: "rgba(0,0,0,0.15)", strokeWidth: 1 }}
+                  contentStyle={{
+                    backgroundColor: "#ffffff",
+                    borderRadius: 9999,
+                    border: "1px solid rgba(0,0,0,0.08)",
+                    boxShadow: "0 6px 20px rgba(0,0,0,0.08)",
+                    padding: "6px 10px",
+                  }}
+                  labelStyle={{ fontSize: 11, color: "rgba(0,0,0,0.6)" }}
+                  formatter={(value: number) => [`₹${value.toLocaleString()}`, "Portfolio value"]}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="value"
+                  stroke="#000000"
+                  strokeWidth={2}
+                  fill="url(#portfolioFill)"
+                  activeDot={{ r: 5, stroke: "#000000", strokeWidth: 1, fill: "#ffffff" }}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
           </div>
         </div>
 
