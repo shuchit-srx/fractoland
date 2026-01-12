@@ -1,16 +1,19 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
+import VideoModal from "@/components/VideoModal";
 import { MapPin, Shield, Coins, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 
 const HeroSection = () => {
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const navigate = useNavigate();
-  
+
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-background">
       {/* Subtle background pattern */}
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,hsl(var(--accent))_0%,transparent_50%)]" />
-      
+
       {/* Floating abstract shapes */}
       <motion.div
         className="absolute top-20 left-10 w-64 h-64 bg-accent/40 rounded-full blur-3xl"
@@ -22,7 +25,7 @@ const HeroSection = () => {
         animate={{ y: [0, 20, 0], x: [0, -10, 0] }}
         transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
       />
-      
+
       {/* Grid pattern overlay */}
       <div className="absolute inset-0 bg-[linear-gradient(to_right,hsl(var(--border))_1px,transparent_1px),linear-gradient(to_bottom,hsl(var(--border))_1px,transparent_1px)] bg-[size:60px_60px] opacity-30" />
 
@@ -58,7 +61,7 @@ const HeroSection = () => {
             transition={{ duration: 0.6, delay: 0.2 }}
             className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed"
           >
-            Invest in verified land parcels with fiat currency. Own tokenized land portions, 
+            Invest in verified land parcels with fiat currency. Own tokenized land portions,
             participate in governance, and earn returns — all secured by blockchain technology.
           </motion.p>
 
@@ -73,10 +76,12 @@ const HeroSection = () => {
               Get Started
               <ArrowRight className="w-5 h-5" />
             </Button>
-            <Button variant="hero-outline" size="lg" onClick={() => navigate("/login?role=user")}>
-              Sign In
+            <Button variant="hero-outline" size="lg" onClick={() => setIsModalOpen(true)}>
+              How it works?
             </Button>
           </motion.div>
+
+          <VideoModal isOpen={isModalOpen} onClose={setIsModalOpen} />
 
           {/* Trust indicators */}
           <motion.div

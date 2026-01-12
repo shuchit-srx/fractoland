@@ -1,17 +1,18 @@
 import { createContext, useContext, useState, ReactNode } from "react";
 
-export type UserRole = "user" | "builder" | "agent" | "owner";
+export type UserRole = "user" | "agent" | "owner";
 
 interface User {
   id: string;
   name: string;
-  email: string;
+  email?: string;
+  phone: string;
   role: UserRole;
 }
 
 interface AuthContextType {
   user: User | null;
-  login: (email: string, password: string, role: UserRole) => Promise<boolean>;
+  login: (phone: string, role: UserRole) => Promise<boolean>;
   logout: () => void;
   isAuthenticated: boolean;
 }
@@ -24,24 +25,21 @@ const dummyUsers: Record<UserRole, User> = {
     id: "1",
     name: "John User",
     email: "user@fractoland.com",
+    phone: "9876543210",
     role: "user",
-  },
-  builder: {
-    id: "2",
-    name: "Sarah Builder",
-    email: "builder@fractoland.com",
-    role: "builder",
   },
   agent: {
     id: "3",
     name: "Mike Agent",
     email: "agent@fractoland.com",
+    phone: "9876543211",
     role: "agent",
   },
   owner: {
     id: "4",
     name: "Lena Landowner",
     email: "owner@fractoland.com",
+    phone: "9876543212",
     role: "owner",
   },
 };
@@ -56,18 +54,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   });
 
-  const login = async (email: string, password: string, role: UserRole): Promise<boolean> => {
+  const login = async (phone: string, role: UserRole): Promise<boolean> => {
     // Simulate API call
     await new Promise((resolve) => setTimeout(resolve, 500));
-    
-    // Dummy validation - accept any email/password
+
+    // Dummy validation - accept any phone
     const loggedInUser = dummyUsers[role];
-    const userData = { ...loggedInUser, email };
-    
+    // In a real app, we'd fetch the user by phone. Here we just update the phone on the dummy user
+    const userData: User = { ...loggedInUser, phone };
+
     // Set localStorage first, then state
     localStorage.setItem("fractoland_user", JSON.stringify(userData));
     setUser(userData);
-    
+
     // Ensure state is updated
     return new Promise((resolve) => {
       setTimeout(() => resolve(true), 0);

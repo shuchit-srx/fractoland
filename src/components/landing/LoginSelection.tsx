@@ -6,21 +6,21 @@ import { useNavigate } from "react-router-dom";
 const loginTypes = [
   {
     icon: User,
-    title: "User / Investor",
+    title: "Individual / Investor",
     description: "Browse lands, invest in tokenized parcels, track your portfolio, and participate in governance voting.",
     features: ["View verified lands", "Invest with fiat", "Track ROI", "Vote on decisions"],
     role: "investor",
   },
   {
     icon: Building2,
-    title: "Builder / Developer",
-    description: "Access land parcels for development, submit bids, and manage your construction projects.",
-    features: ["Browse available lands", "Submit purchase bids", "Track project status", "Manage approvals"],
-    role: "builder",
+    title: "Property Owners",
+    description: "List and manage your properties, track tokens, and handle exit requests.",
+    features: ["List properties", "Manage tokens", "Track requests", "Secure payments"],
+    role: "owner", // Assuming role mapping, or keeping 'owner' as internal ID
   },
   {
     icon: Users,
-    title: "Agent",
+    title: "Realestate Consultants",
     description: "Refer investors to the platform, manage your network, and earn commissions on successful investments.",
     features: ["Generate referral links", "Track investor activity", "Earn commissions", "Withdraw earnings"],
     role: "agent",

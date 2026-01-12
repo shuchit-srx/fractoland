@@ -26,7 +26,7 @@ const Navbar = () => {
   const navLinks = [
     { label: "How It Works", href: "#how-it-works" },
     { label: "For Investors", href: "#investors" },
-    { label: "For Builders", href: "#builders" },
+
     { label: "Trust & Security", href: "#trust" },
   ];
 
@@ -35,11 +35,10 @@ const Navbar = () => {
       initial={{ y: -100 }}
       animate={{ y: 0 }}
       transition={{ duration: 0.5 }}
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        isScrolled
-          ? "bg-background/80 backdrop-blur-lg border-b border-border shadow-soft"
-          : "bg-transparent"
-      }`}
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled
+        ? "bg-background/80 backdrop-blur-lg border-b border-border shadow-soft"
+        : "bg-transparent"
+        }`}
     >
       <div className="container px-4 md:px-6">
         <div className="flex items-center justify-between h-16 md:h-20">
@@ -76,19 +75,15 @@ const Navbar = () => {
               <DropdownMenuContent align="end" className="w-52">
                 <DropdownMenuItem onClick={() => navigate("/login?role=user")} className="cursor-pointer">
                   <User className="w-4 h-4 mr-2" />
-                  <span>User</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate("/login?role=builder")} className="cursor-pointer">
-                  <Building2 className="w-4 h-4 mr-2" />
-                  <span>Builder</span>
+                  <span>Individual</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => navigate("/login?role=owner")} className="cursor-pointer">
                   <Building2 className="w-4 h-4 mr-2" />
-                  <span>Land Owner</span>
+                  <span>Property Owners</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => navigate("/login?role=agent")} className="cursor-pointer">
                   <Users className="w-4 h-4 mr-2" />
-                  <span>Agent</span>
+                  <span>Realestate Consultants</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -130,19 +125,15 @@ const Navbar = () => {
                   <p className="text-xs text-muted-foreground px-2 mb-1">Sign In as:</p>
                   <Button variant="ghost" size="sm" className="justify-start" onClick={() => { setIsMobileMenuOpen(false); navigate("/login?role=user"); }}>
                     <User className="w-4 h-4 mr-2" />
-                    User
-                  </Button>
-                  <Button variant="ghost" size="sm" className="justify-start" onClick={() => { setIsMobileMenuOpen(false); navigate("/login?role=builder"); }}>
-                    <Building2 className="w-4 h-4 mr-2" />
-                    Builder
+                    Individual
                   </Button>
                   <Button variant="ghost" size="sm" className="justify-start" onClick={() => { setIsMobileMenuOpen(false); navigate("/login?role=owner"); }}>
                     <Building2 className="w-4 h-4 mr-2" />
-                    Land Owner
+                    Property Owners
                   </Button>
                   <Button variant="ghost" size="sm" className="justify-start" onClick={() => { setIsMobileMenuOpen(false); navigate("/login?role=agent"); }}>
                     <Users className="w-4 h-4 mr-2" />
-                    Agent
+                    Realestate Consultants
                   </Button>
                 </div>
                 <Button size="sm" onClick={() => { setIsMobileMenuOpen(false); navigate("/register?role=user"); }}>
