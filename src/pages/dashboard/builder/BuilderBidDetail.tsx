@@ -1,8 +1,7 @@
-import { motion } from "framer-motion";
-import { ArrowLeft, MapPin, Calendar, Clock, CheckCircle, AlertCircle, XCircle, TrendingUp, FileText, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import DashboardLayout from "@/components/dashboard/DashboardLayout";
-import { useParams, useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
+import { AlertCircle, ArrowLeft, Calendar, CheckCircle, Clock, FileText, MapPin, TrendingUp, Users, XCircle } from "lucide-react";
+import { useNavigate, useParams } from "react-router-dom";
 
 const bidDetails = [
   {
@@ -74,17 +73,15 @@ const BuilderBidDetail = () => {
 
   if (!bid) {
     return (
-      <DashboardLayout>
-        <div className="space-y-6">
-          <Button variant="ghost" onClick={() => navigate("/dashboard/builder/bids")} className="mb-4">
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to My Bids
-          </Button>
-          <div className="bg-card border border-border rounded-2xl p-8 text-center">
-            <p className="text-muted-foreground">Bid not found.</p>
-          </div>
+      <div className="space-y-6">
+        <Button variant="ghost" onClick={() => navigate("/dashboard/builder/bids")} className="mb-4">
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Back to My Bids
+        </Button>
+        <div className="bg-card border border-border rounded-2xl p-8 text-center">
+          <p className="text-muted-foreground">Bid not found.</p>
         </div>
-      </DashboardLayout>
+      </div>
     );
   }
 
@@ -92,136 +89,132 @@ const BuilderBidDetail = () => {
   const StatusIcon = config.icon;
 
   return (
-    <DashboardLayout>
-      <div className="space-y-6 max-w-4xl">
-        {/* Header with Back Button */}
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" onClick={() => navigate("/dashboard/builder/bids")} className="rounded-full">
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back
-          </Button>
-          <div className="flex-1">
-            <h1 className="text-3xl font-bold text-foreground">Bid Details</h1>
-            <p className="text-muted-foreground mt-1">Review the details of your bid for this land opportunity</p>
-          </div>
-        </div>
-
-        {/* Main Card */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
-          className="bg-card border border-border rounded-2xl overflow-hidden"
-        >
-          {/* Header Section */}
-          <div className="p-6 border-b border-border bg-secondary/30">
-            <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-              <div className="flex-1">
-                <div className="flex items-center gap-3 mb-2">
-                  <h2 className="text-2xl font-bold text-foreground">{bid.land}</h2>
-                  <span className={`text-xs font-medium px-3 py-1 rounded-full border ${config.color}`}>
-                    <StatusIcon className="w-3 h-3 inline mr-1" />
-                    {config.label}
-                  </span>
-                </div>
-                <div className="flex items-center gap-1 text-muted-foreground">
-                  <MapPin className="w-4 h-4" />
-                  <span>{bid.location}</span>
-                </div>
-              </div>
-              {bid.status === "outbid" && (
-                <Button className="rounded-full">
-                  Increase Bid
-                </Button>
-              )}
-            </div>
-          </div>
-
-          {/* Details Section */}
-          <div className="p-6 space-y-6">
-            {/* Key Metrics */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="bg-secondary/50 rounded-xl p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <TrendingUp className="w-4 h-4 text-muted-foreground" />
-                  <p className="text-xs text-muted-foreground uppercase tracking-wide">Your Bid</p>
-                </div>
-                <p className="text-xl font-bold text-foreground">{bid.amount}</p>
-              </div>
-              <div className="bg-secondary/50 rounded-xl p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <Users className="w-4 h-4 text-muted-foreground" />
-                  <p className="text-xs text-muted-foreground uppercase tracking-wide">Your Rank</p>
-                </div>
-                <p className="text-xl font-bold text-foreground">#{bid.rank} of {bid.totalBids}</p>
-              </div>
-              <div className="bg-secondary/50 rounded-xl p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <Calendar className="w-4 h-4 text-muted-foreground" />
-                  <p className="text-xs text-muted-foreground uppercase tracking-wide">Submitted</p>
-                </div>
-                <p className="text-lg font-semibold text-foreground">{bid.submittedOn}</p>
-              </div>
-              <div className="bg-secondary/50 rounded-xl p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <Clock className="w-4 h-4 text-muted-foreground" />
-                  <p className="text-xs text-muted-foreground uppercase tracking-wide">Deadline</p>
-                </div>
-                <p className="text-lg font-semibold text-foreground">{bid.deadline}</p>
-              </div>
-            </div>
-
-            {/* Additional Information */}
-            <div className="space-y-4">
-              <div>
-                <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-                  <FileText className="w-4 h-4" />
-                  Additional Information
-                </h3>
-                <div className="bg-secondary/30 rounded-xl p-4">
-                  <p className="text-sm text-foreground leading-relaxed">{bid.notes}</p>
-                </div>
-              </div>
-
-              {bid.rejectionReason && (
-                <div>
-                  <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-                    <AlertCircle className="w-4 h-4" />
-                    Rejection Reason
-                  </h3>
-                  <div className="bg-red-50/50 border border-red-200 rounded-xl p-4">
-                    <p className="text-sm text-red-600">{bid.rejectionReason}</p>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </motion.div>
-
-        {/* Action Buttons */}
-        <div className="flex flex-col sm:flex-row gap-3">
-          <Button
-            variant="outline"
-            onClick={() => navigate("/dashboard/builder/bids")}
-            className="rounded-full flex-1"
-          >
-            Back to My Bids
-          </Button>
-          {bid.status === "pending" && (
-            <Button
-              variant="outline"
-              onClick={() => navigate("/dashboard/builder/lands")}
-              className="rounded-full flex-1"
-            >
-              Browse More Lands
-            </Button>
-          )}
+    <div className="space-y-6 max-w-4xl">
+      {/* Header with Back Button */}
+      <div className="flex items-center gap-4">
+        <Button variant="ghost" onClick={() => navigate("/dashboard/builder/bids")} className="rounded-full">
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Back
+        </Button>
+        <div className="flex-1">
+          <h1 className="text-3xl font-bold text-foreground">Bid Details</h1>
+          <p className="text-muted-foreground mt-1">Review the details of your bid for this land opportunity</p>
         </div>
       </div>
-    </DashboardLayout>
+
+      {/* Main Card */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+        className="bg-card border border-border rounded-2xl overflow-hidden"
+      >
+        {/* Header Section */}
+        <div className="p-6 border-b border-border bg-secondary/30">
+          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+            <div className="flex-1">
+              <div className="flex items-center gap-3 mb-2">
+                <h2 className="text-2xl font-bold text-foreground">{bid.land}</h2>
+                <span className={`text-xs font-medium px-3 py-1 rounded-full border ${config.color}`}>
+                  <StatusIcon className="w-3 h-3 inline mr-1" />
+                  {config.label}
+                </span>
+              </div>
+              <div className="flex items-center gap-1 text-muted-foreground">
+                <MapPin className="w-4 h-4" />
+                <span>{bid.location}</span>
+              </div>
+            </div>
+            {bid.status === "outbid" && (
+              <Button className="rounded-full">
+                Increase Bid
+              </Button>
+            )}
+          </div>
+        </div>
+
+        {/* Details Section */}
+        <div className="p-6 space-y-6">
+          {/* Key Metrics */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="bg-secondary/50 rounded-xl p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <TrendingUp className="w-4 h-4 text-muted-foreground" />
+                <p className="text-xs text-muted-foreground uppercase tracking-wide">Your Bid</p>
+              </div>
+              <p className="text-xl font-bold text-foreground">{bid.amount}</p>
+            </div>
+            <div className="bg-secondary/50 rounded-xl p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Users className="w-4 h-4 text-muted-foreground" />
+                <p className="text-xs text-muted-foreground uppercase tracking-wide">Your Rank</p>
+              </div>
+              <p className="text-xl font-bold text-foreground">#{bid.rank} of {bid.totalBids}</p>
+            </div>
+            <div className="bg-secondary/50 rounded-xl p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Calendar className="w-4 h-4 text-muted-foreground" />
+                <p className="text-xs text-muted-foreground uppercase tracking-wide">Submitted</p>
+              </div>
+              <p className="text-lg font-semibold text-foreground">{bid.submittedOn}</p>
+            </div>
+            <div className="bg-secondary/50 rounded-xl p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Clock className="w-4 h-4 text-muted-foreground" />
+                <p className="text-xs text-muted-foreground uppercase tracking-wide">Deadline</p>
+              </div>
+              <p className="text-lg font-semibold text-foreground">{bid.deadline}</p>
+            </div>
+          </div>
+
+          {/* Additional Information */}
+          <div className="space-y-4">
+            <div>
+              <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+                <FileText className="w-4 h-4" />
+                Additional Information
+              </h3>
+              <div className="bg-secondary/30 rounded-xl p-4">
+                <p className="text-sm text-foreground leading-relaxed">{bid.notes}</p>
+              </div>
+            </div>
+
+            {bid.rejectionReason && (
+              <div>
+                <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4" />
+                  Rejection Reason
+                </h3>
+                <div className="bg-red-50/50 border border-red-200 rounded-xl p-4">
+                  <p className="text-sm text-red-600">{bid.rejectionReason}</p>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Action Buttons */}
+      <div className="flex flex-col sm:flex-row gap-3">
+        <Button
+          variant="outline"
+          onClick={() => navigate("/dashboard/builder/bids")}
+          className="rounded-full flex-1"
+        >
+          Back to My Bids
+        </Button>
+        {bid.status === "pending" && (
+          <Button
+            variant="outline"
+            onClick={() => navigate("/dashboard/builder/lands")}
+            className="rounded-full flex-1"
+          >
+            Browse More Lands
+          </Button>
+        )}
+      </div>
+    </div>
   );
 };
 
 export default BuilderBidDetail;
-
-

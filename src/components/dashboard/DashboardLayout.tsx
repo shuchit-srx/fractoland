@@ -1,14 +1,23 @@
-import { ReactNode, useState, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
-import { motion } from "framer-motion";
-import { MapPin, LogOut, Home, Wallet, Vote, Users, Building2, Briefcase, Link2, FileText, Menu, X, ChevronRight, Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useAuth, UserRole } from "@/contexts/AuthContext";
+import { motion } from "framer-motion";
+import { Bell, Briefcase, ChevronRight, FileText, Heart, Home, Link2, LogOut, MapPin, Menu, Users, Vote, X } from "lucide-react";
+import { ReactNode, useEffect, useRef, useState } from "react";
+import { Outlet, useLocation, useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
 interface User {
   id: string;
   name: string;
-  email: string;
+  email?: string;
+  phone: string;
   role: UserRole;
 }
 
@@ -24,43 +33,56 @@ const navItems: Record<UserRole, NavItem[]> = {
     { icon: MapPin, label: "Explore Lands", href: "/dashboard/user/explore" },
     { icon: Briefcase, label: "Portfolio", href: "/dashboard/user/portfolio" },
     { icon: Vote, label: "Voting", href: "/dashboard/user/voting" },
-    { icon: Wallet, label: "Wallet", href: "/dashboard/user/wallet" },
+    { icon: Heart, label: "Interested Lands", href: "/dashboard/user/wishlist" },
+    { icon: Bell, label: "Notifications", href: "/dashboard/user/notifications" },
+    { icon: Briefcase, label: "Profile", href: "/dashboard/user/profile" },
+    // { icon: Wallet, label: "Wallet", href: "/dashboard/user/wallet" },
   ],
-  builder: [
-    { icon: Home, label: "Dashboard", href: "/dashboard/builder" },
-    { icon: MapPin, label: "Explore Lands", href: "/dashboard/builder/lands" },
-    { icon: FileText, label: "My Bids", href: "/dashboard/builder/bids" },
-    { icon: Building2, label: "Projects / Purchases", href: "/dashboard/builder/projects" },
-    { icon: Wallet, label: "Payments", href: "/dashboard/builder/payments" },
-    { icon: Bell, label: "Notifications", href: "/dashboard/builder/notifications" },
-    { icon: Briefcase, label: "Profile", href: "/dashboard/builder/profile" },
-  ],
+
   agent: [
     { icon: Home, label: "Dashboard", href: "/dashboard/agent" },
+    { icon: MapPin, label: "ExploreLands", href: "/dashboard/agent/explore" },
     { icon: Users, label: "Referrals", href: "/dashboard/agent/referrals" },
     { icon: Link2, label: "Referral Links", href: "/dashboard/agent/links" },
-    { icon: Wallet, label: "Earnings", href: "/dashboard/agent/earnings" },
+    { icon: Bell, label: "Notifications", href: "/dashboard/agent/notifications" },
+    { icon: Briefcase, label: "Profile", href: "/dashboard/agent/profile" },
+    // { icon: Wallet, label: "Earnings", href: "/dashboard/agent/earnings" },
   ],
   owner: [
     { icon: Home, label: "Dashboard", href: "/dashboard/owner" },
     { icon: MapPin, label: "My Lands", href: "/dashboard/owner/lands" },
     { icon: Vote, label: "Voting", href: "/dashboard/owner/voting" },
     { icon: FileText, label: "Developer Bids", href: "/dashboard/owner/bids" },
-    { icon: Wallet, label: "Payments", href: "/dashboard/owner/payments" },
+    { icon: Bell, label: "Notifications", href: "/dashboard/owner/notifications" },
+    // { icon: Wallet, label: "Payments", href: "/dashboard/owner/payments" },
     { icon: Briefcase, label: "Profile", href: "/dashboard/owner/profile" },
-  ],
+  ]
+};
+
+const roleLabels: Record<UserRole, string> = {
+  user: "Individual Investor",
+  agent: "Real Estate Consultant",
+  owner: "Property Owner",
 };
 
 interface DashboardLayoutProps {
-  children: ReactNode;
+  children?: ReactNode;
 }
 
 const DashboardLayout = ({ children }: DashboardLayoutProps) => {
-  const { user, logout } = useAuth();
+  const { user, login, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  
+  const mainContentRef = useRef<HTMLDivElement>(null);
+
+  // Scroll to top of main content on route change
+  useEffect(() => {
+    if (mainContentRef.current) {
+      mainContentRef.current.scrollTop = 0;
+    }
+  }, [location.pathname]);
+
   // Check localStorage synchronously on first render as fallback
   const getLocalUser = (): User | null => {
     try {
@@ -70,7 +92,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
       return null;
     }
   };
-  
+
   const [localUser, setLocalUser] = useState<User | null>(getLocalUser);
 
   useEffect(() => {
@@ -118,6 +140,19 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   // Safety check: ensure role is valid
   const items = navItems[currentUser.role as UserRole] || navItems.user;
 
+  const handleRoleChange = async (newRole: UserRole) => {
+    if (newRole === currentUser.role) return;
+
+    try {
+      // Simulate switching role by re-logging in with same phone but new role
+      await login(currentUser.phone, newRole);
+      toast.success(`Switched to ${roleLabels[newRole]}`);
+      navigate(`/dashboard/${newRole}`);
+    } catch (error) {
+      toast.error("Failed to switch role");
+    }
+  };
+
   const handleLogout = () => {
     logout();
     navigate("/");
@@ -126,7 +161,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const isActiveRoute = (href: string) => location.pathname === href;
 
   return (
-    <div className="min-h-screen bg-secondary/30 flex">
+    <div className="fixed inset-0 w-full bg-secondary/30 flex overflow-hidden">
       {/* Mobile menu button */}
       <button
         onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -144,15 +179,12 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
       )}
 
       {/* Sidebar */}
-      <motion.aside
-        initial={{ x: -100, opacity: 0 }}
-        animate={{ x: 0, opacity: 1 }}
-        className={`fixed lg:static w-72 h-full bg-background border-r border-border flex flex-col z-40 transition-transform lg:translate-x-0 ${
-          isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"
-        }`}
+      <aside
+        className={`fixed lg:static inset-y-0 left-0 w-72 bg-background border-r border-border flex flex-col z-40 transition-transform lg:translate-x-0 ${isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"
+          }`}
       >
         {/* Logo */}
-        <div className="p-6 border-b border-border">
+        <div className="p-6 border-b border-border flex-none">
           <a href="/" className="flex items-center gap-3">
             <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center">
               <MapPin className="w-5 h-5 text-primary-foreground" />
@@ -162,7 +194,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
         </div>
 
         {/* User info */}
-        <div className="p-4">
+        <div className="p-4 flex-none">
           <div className="p-4 bg-secondary/50 rounded-xl">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
@@ -174,15 +206,24 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
               </div>
             </div>
             <div className="mt-3">
-              <span className="inline-block px-3 py-1 bg-primary/10 text-primary text-xs font-medium rounded-full capitalize">
-                {currentUser.role}
-              </span>
+              <Select value={currentUser.role} onValueChange={(value) => handleRoleChange(value as UserRole)}>
+                <SelectTrigger className="h-8 w-full text-xs bg-background border-border text-foreground hover:bg-accent/50 transition-colors">
+                  <SelectValue placeholder="Select Role" />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(roleLabels).map(([role, label]) => (
+                    <SelectItem key={role} value={role} className="text-xs">
+                      {label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 px-4 py-2 space-y-1 overflow-y-auto">
+        <nav className="flex-1 px-4 py-2 space-y-1 overflow-y-auto custom-scrollbar">
           {items.map((item) => {
             const isActive = isActiveRoute(item.href);
             return (
@@ -192,11 +233,10 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                   navigate(item.href);
                   setIsMobileMenuOpen(false);
                 }}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
-                  isActive
-                    ? "bg-primary text-primary-foreground shadow-md"
-                    : "text-muted-foreground hover:bg-secondary hover:text-foreground"
-                }`}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${isActive
+                  ? "bg-primary text-primary-foreground shadow-md"
+                  : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                  }`}
               >
                 <item.icon className="w-5 h-5" />
                 {item.label}
@@ -207,27 +247,30 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
         </nav>
 
         {/* Logout */}
-        <div className="p-4 border-t border-border">
-          <Button 
-            variant="ghost" 
-            className="w-full justify-start gap-3 text-muted-foreground hover:text-foreground hover:bg-secondary" 
+        <div className="p-4 border-t border-border flex-none">
+          <Button
+            variant="ghost"
+            className="w-full justify-start gap-3 text-muted-foreground hover:text-foreground hover:bg-secondary"
             onClick={handleLogout}
           >
             <LogOut className="w-5 h-5" />
             Sign Out
           </Button>
         </div>
-      </motion.aside>
+      </aside>
 
       {/* Main content */}
-      <main className="flex-1 p-4 lg:p-8 overflow-auto lg:ml-0 mt-16 lg:mt-0">
+      <main
+        ref={mainContentRef}
+        className="flex-1 h-full overflow-y-auto p-4 lg:p-8 lg:ml-0 mt-16 lg:mt-0"
+      >
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
-          className="max-w-7xl mx-auto"
+          className="max-w-7xl mx-auto pb-6"
         >
-          {children}
+          {children || <Outlet />}
         </motion.div>
       </main>
     </div>

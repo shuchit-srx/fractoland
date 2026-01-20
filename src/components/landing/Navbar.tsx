@@ -1,13 +1,16 @@
-import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
-import { MapPin, Menu, X, User, Building2, Users, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { motion } from "framer-motion";
+import { Building2, ChevronDown, MapPin, Menu, User, Users, X } from "lucide-react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 const Navbar = () => {
@@ -35,9 +38,9 @@ const Navbar = () => {
       initial={{ y: -100 }}
       animate={{ y: 0 }}
       transition={{ duration: 0.5 }}
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled
-        ? "bg-background/80 backdrop-blur-lg border-b border-border shadow-soft"
-        : "bg-transparent"
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled || isMobileMenuOpen
+          ? "bg-background/95 backdrop-blur-lg border-b border-border shadow-soft"
+          : "bg-transparent"
         }`}
     >
       <div className="container px-4 md:px-6">
@@ -72,11 +75,22 @@ const Navbar = () => {
                   <ChevronDown className="w-4 h-4" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-52">
-                <DropdownMenuItem onClick={() => navigate("/login?role=user")} className="cursor-pointer">
-                  <User className="w-4 h-4 mr-2" />
-                  <span>Individual</span>
-                </DropdownMenuItem>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuSub>
+                  <DropdownMenuSubTrigger className="cursor-pointer">
+                    <User className="w-4 h-4 mr-2" />
+                    <span>Investors</span>
+                  </DropdownMenuSubTrigger>
+                  <DropdownMenuSubContent>
+                    <DropdownMenuItem onClick={() => navigate("/login?role=user&userType=individual")} className="cursor-pointer">
+                      <span>Individuals</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate("/login?role=user&userType=organization")} className="cursor-pointer">
+                      <span>Organizations</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuSubContent>
+                </DropdownMenuSub>
+
                 <DropdownMenuItem onClick={() => navigate("/login?role=owner")} className="cursor-pointer">
                   <Building2 className="w-4 h-4 mr-2" />
                   <span>Property Owners</span>
@@ -123,10 +137,15 @@ const Navbar = () => {
               <div className="flex flex-col gap-2 pt-4 border-t border-border">
                 <div className="flex flex-col gap-1">
                   <p className="text-xs text-muted-foreground px-2 mb-1">Sign In as:</p>
-                  <Button variant="ghost" size="sm" className="justify-start" onClick={() => { setIsMobileMenuOpen(false); navigate("/login?role=user"); }}>
-                    <User className="w-4 h-4 mr-2" />
-                    Individual
-                  </Button>
+                  <div className="pl-2 border-l-2 border-border ml-2 my-1">
+                    <p className="text-xs font-medium text-muted-foreground mb-1">Investors</p>
+                    <Button variant="ghost" size="sm" className="justify-start w-full h-8" onClick={() => { setIsMobileMenuOpen(false); navigate("/login?role=user&userType=individual"); }}>
+                      Individuals
+                    </Button>
+                    <Button variant="ghost" size="sm" className="justify-start w-full h-8" onClick={() => { setIsMobileMenuOpen(false); navigate("/login?role=user&userType=organization"); }}>
+                      Organizations
+                    </Button>
+                  </div>
                   <Button variant="ghost" size="sm" className="justify-start" onClick={() => { setIsMobileMenuOpen(false); navigate("/login?role=owner"); }}>
                     <Building2 className="w-4 h-4 mr-2" />
                     Property Owners
