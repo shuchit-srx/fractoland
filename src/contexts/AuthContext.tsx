@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, ReactNode, useContext, useState } from "react";
 
 export type UserRole = "user" | "agent" | "owner";
 
@@ -42,6 +42,7 @@ const dummyUsers: Record<UserRole, User> = {
     phone: "9876543212",
     role: "owner",
   },
+
 };
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
