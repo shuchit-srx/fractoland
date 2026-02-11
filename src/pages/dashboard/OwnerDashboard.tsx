@@ -1,13 +1,13 @@
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
-import { Bell, Home, MapPin, Users, Vote } from "lucide-react";
+import { Bell, Home, MapPin, Users, Vote, ArrowUpRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 const summaryCards = [
-  { label: "Total Lands Listed", value: "6", subtext: "Total land parcels submitted to FractoLand" },
-  { label: "Active Tokenized Lands", value: "4", subtext: "Lands currently open or active for investment" },
-  { label: "Lands Under Voting", value: "1", subtext: "Lands currently in community voting stage" },
-  { label: "Total Value Realized", value: "₹ 2.4 Cr", subtext: "Total amount received from completed land sales" },
+  { label: "Total Lands Listed", value: "6", subtext: "Total land parcels submitted" },
+  { label: "Active Tokenized", value: "4", subtext: "Lands active for investment" },
+  { label: "Under Voting", value: "1", subtext: "Lands in community voting" },
+  { label: "Value Realized", value: "₹ 2.4 Cr", subtext: "Total from completed sales" },
 ];
 
 const lands = [
@@ -75,39 +75,38 @@ const verificationStatus = [
   { label: "Bank details", value: "Verified" },
 ];
 
+// CHANGED: Use 'xl' breakpoint.
+// Below XL (Laptop/Tablet), the table is too wide for the space next to the sidebar.
+const GRID_COLS_CLASS = "xl:grid-cols-[1.75fr_1.5fr_1.25fr_1fr_1fr_1.25fr]";
+
 const OwnerDashboard = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 pb-10">
       {/* Header */}
-      <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-        <div className="flex flex-col gap-1">
-          <p className="text-xs text-muted-foreground uppercase tracking-[0.18em]">
+      <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+        <div className="space-y-1">
+          <p className="text-xs font-semibold text-primary uppercase tracking-wider">
             Land Owner Dashboard
           </p>
-          <h1 className="text-3xl font-bold text-foreground flex items-center gap-2">
-            <Home className="w-5 h-5" />
-            <span>Welcome back, Land Owner</span>
+          <h1 className="text-3xl font-bold text-foreground">
+            Welcome back, Land Owner
           </h1>
           <p className="text-muted-foreground text-sm max-w-2xl">
-            Manage your lands, track investor participation, and monitor voting and sale progress in
-            one place.
+            Manage your lands, track investor participation, and monitor voting and sale progress.
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <button
-            type="button"
-            className="relative flex h-9 w-9 items-center justify-center rounded-full border border-border bg-background text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
-            aria-label="Notifications"
+          <Button
+            variant="outline"
+            size="icon"
+            className="rounded-full shrink-0"
           >
             <Bell className="w-4 h-4" />
-            <span className="absolute -top-1 -right-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-foreground text-[10px] text-background px-1">
-              3
-            </span>
-          </button>
+          </Button>
           <Button
-            className="rounded-full h-9 px-5 text-sm"
+            className="rounded-full px-5 text-sm"
             onClick={() => navigate("/dashboard/owner/lands/new")}
           >
             + Add New Land
@@ -116,104 +115,136 @@ const OwnerDashboard = () => {
       </div>
 
       {/* Summary cards */}
-      <div className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {summaryCards.map((card, index) => (
-            <motion.div
-              key={card.label}
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.06 }}
-              className="bg-card border border-border rounded-2xl p-5 shadow-card"
-            >
-              <p className="text-xs text-muted-foreground mb-1">{card.label}</p>
-              <p className="text-2xl font-semibold text-foreground">{card.value}</p>
-              <p className="text-xs text-muted-foreground mt-1">{card.subtext}</p>
-            </motion.div>
-          ))}
-        </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {summaryCards.map((card, index) => (
+          <motion.div
+            key={card.label}
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.06 }}
+            className="bg-card border border-border rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow"
+          >
+            <p className="text-xs text-muted-foreground font-medium uppercase mb-2">{card.label}</p>
+            <p className="text-2xl font-bold text-foreground mb-1">{card.value}</p>
+            <p className="text-xs text-muted-foreground line-clamp-1">{card.subtext}</p>
+          </motion.div>
+        ))}
       </div>
 
-      {/* My Lands + Investment Progress */}
-      <div className="grid lg:grid-cols-2 gap-8">
-        {/* My Lands */}
-        <div className="bg-card border border-border rounded-2xl p-6 shadow-card">
-          <div className="flex items-center justify-between mb-4">
+      {/* Main Grid: My Lands & Progress */}
+      <div className="grid xl:grid-cols-2 gap-8">
+
+        {/* My Lands Section */}
+        <div className="bg-card border border-border rounded-2xl shadow-sm overflow-hidden">
+          <div className="p-6 pb-4 border-b border-border/50 flex justify-between items-center">
             <h2 className="text-lg font-semibold text-foreground">My Lands</h2>
+            <Button variant="ghost" size="sm" className="text-xs h-8" onClick={() => navigate("/dashboard/owner/lands")}>
+              View All <ArrowUpRight className="ml-1 w-3 h-3" />
+            </Button>
           </div>
-          <div className="space-y-3 text-sm">
-            <div className="hidden md:grid grid-cols-6 gap-3 text-xs text-muted-foreground pb-1 border-b border-border/70">
-              <span>Land</span>
+
+          <div className="p-0">
+            {/* Desktop Header (Only visible on XL+) */}
+            <div className={`hidden xl:grid ${GRID_COLS_CLASS} gap-4 px-6 py-3 bg-secondary/30 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider border-b border-border`}>
+              <span>Property</span>
               <span>Location</span>
               <span>Status</span>
-              <span className="text-right">Total Tokens</span>
-              <span className="text-right">Tokens Sold</span>
-              <span className="text-right">Lock-in</span>
+              <span className="text-right">Tokens</span>
+              <span className="text-right">Sold</span>
+              <span className="text-right">Action</span>
             </div>
-            {lands.map((land) => (
-              <div
-                key={land.id}
-                className="grid md:grid-cols-6 gap-3 items-center py-3 border-b last:border-b-0 border-border/60"
-              >
-                <div className="md:col-span-1">
-                  <p className="font-medium text-foreground text-sm">{land.name}</p>
-                </div>
-                <div className="md:col-span-1 flex items-center gap-2 text-xs text-muted-foreground">
-                  <MapPin className="w-3 h-3" />
-                  <span className="truncate">{land.location}</span>
-                </div>
-                <div className="md:col-span-1">
-                  <span className="inline-flex items-center px-2 py-1 rounded-full text-[11px] bg-secondary/80 text-foreground">
-                    {land.status}
-                  </span>
-                </div>
-                <div className="md:col-span-1 text-right text-xs text-muted-foreground">
-                  {land.tokens.toLocaleString()}
-                </div>
-                <div className="md:col-span-1 text-right text-xs text-muted-foreground">
-                  {land.tokensSold.toLocaleString()}
-                </div>
-                <div className="md:col-span-1 flex md:justify-end">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground">{land.lockIn}</span>
-                    <Button variant="outline" size="sm" className="h-7 text-xs px-3 rounded-full">
-                      View
+
+            <div className="divide-y divide-border/60">
+              {lands.map((land) => (
+                <div
+                  key={land.id}
+                  // Responsive Grid: Block on Mobile, Grid on XL
+                  className={`p-4 xl:px-6 xl:py-4 grid grid-cols-1 xl:grid-cols-[1.75fr_1.5fr_1.25fr_1fr_1fr_1.25fr] gap-y-3 gap-x-4 items-center hover:bg-secondary/20 transition-colors`}
+                >
+                  {/* Name */}
+                  <div className="font-medium text-foreground text-sm flex justify-between xl:block">
+                    <span>{land.name}</span>
+                    <span className="xl:hidden inline-flex items-center px-2 py-0.5 rounded-full text-[10px] bg-secondary border border-border">
+                      {land.status}
+                    </span>
+                  </div>
+
+                  {/* Location */}
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground xl:col-span-1">
+                    <MapPin className="w-3.5 h-3.5 shrink-0 text-primary/60" />
+                    <span className="truncate">{land.location}</span>
+                  </div>
+
+                  {/* Status (Desktop Only) */}
+                  <div className="hidden xl:block">
+                    <span className="inline-flex items-center px-2 py-1 rounded-full text-[10px] font-medium bg-secondary text-foreground border border-border/50">
+                      {land.status}
+                    </span>
+                  </div>
+
+                  {/* Stats Row for Mobile */}
+                  <div className="grid grid-cols-2 gap-4 xl:hidden mt-1 bg-secondary/20 p-2 rounded-lg border border-border/50">
+                    <div>
+                      <p className="text-[10px] text-muted-foreground uppercase">Total Tokens</p>
+                      <p className="text-sm font-medium">{land.tokens.toLocaleString()}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-muted-foreground uppercase">Tokens Sold</p>
+                      <p className="text-sm font-medium">{land.tokensSold.toLocaleString()}</p>
+                    </div>
+                  </div>
+
+                  {/* Desktop Stats */}
+                  <div className="hidden xl:block text-right text-xs text-muted-foreground font-medium">
+                    {land.tokens.toLocaleString()}
+                  </div>
+                  <div className="hidden xl:block text-right text-xs text-muted-foreground font-medium">
+                    {land.tokensSold.toLocaleString()}
+                  </div>
+
+                  {/* Action */}
+                  <div className="flex justify-end xl:justify-end mt-2 xl:mt-0">
+                    <Button variant="outline" size="sm" className="h-8 text-xs rounded-full w-full xl:w-auto">
+                      Manage
                     </Button>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
 
         {/* Investment Progress */}
-        <div className="bg-card border border-border rounded-2xl p-6 shadow-card">
-          <div className="flex items-center justify-between mb-4">
+        <div className="bg-card border border-border rounded-2xl shadow-sm p-6">
+          <div className="flex items-center justify-between mb-6">
             <h2 className="text-lg font-semibold text-foreground">Investment Progress</h2>
           </div>
-          <div className="space-y-4 text-sm">
+          <div className="space-y-6">
             {investmentProgress.map((item) => {
               const pct = item.totalTokens
                 ? Math.round((item.tokensSold / item.totalTokens) * 100)
                 : 0;
               return (
                 <div key={item.id} className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <p className="font-medium text-foreground">{item.name}</p>
-                    <span className="text-xs text-muted-foreground">
-                      {item.tokensSold.toLocaleString()}/{item.totalTokens.toLocaleString()} tokens ·{" "}
+                  <div className="flex justify-between items-end">
+                    <div>
+                      <p className="font-medium text-sm text-foreground">{item.name}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{item.investors} Investors</p>
+                    </div>
+                    <span className="text-xs font-semibold text-primary">
                       {pct}%
                     </span>
                   </div>
-                  <div className="h-1.5 w-full rounded-full bg-secondary overflow-hidden">
+                  <div className="h-2 w-full rounded-full bg-secondary overflow-hidden">
                     <div
-                      className="h-full bg-foreground rounded-full"
+                      className="h-full bg-primary rounded-full transition-all duration-1000"
                       style={{ width: `${pct}%` }}
                     />
                   </div>
-                  <p className="text-xs text-muted-foreground">
-                    Investors: {item.investors}
-                  </p>
+                  <div className="flex justify-between text-[11px] text-muted-foreground">
+                    <span>0 Tokens</span>
+                    <span>{item.totalTokens.toLocaleString()} Tokens</span>
+                  </div>
                 </div>
               );
             })}
@@ -221,115 +252,60 @@ const OwnerDashboard = () => {
         </div>
       </div>
 
-      {/* Voting + Developer Interest */}
-      <div className="grid lg:grid-cols-2 gap-8">
+      {/* Voting + Interest Grid */}
+      <div className="grid md:grid-cols-2 gap-8">
         {/* Voting Updates */}
-        <div className="bg-card border border-border rounded-2xl p-6 shadow-card">
+        <div className="bg-card border border-border rounded-2xl p-6 shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-foreground">Voting Updates</h2>
+            <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-medium border border-amber-200">Live</span>
           </div>
-          {votingUpdates.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No active voting sessions right now.</p>
-          ) : (
-            <div className="space-y-3 text-sm">
-              {votingUpdates.map((vote) => (
-                <div
-                  key={vote.id}
-                  className="border border-border rounded-xl p-3 flex flex-col gap-2 bg-secondary/40"
-                >
-                  <div className="flex items-center justify-between">
-                    <p className="font-medium text-foreground flex items-center gap-2">
-                      <Vote className="w-4 h-4" />
-                      {vote.land}
-                    </p>
-                    <span className="text-[11px] px-2 py-1 rounded-full bg-background text-muted-foreground">
-                      {vote.rule}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between text-xs text-muted-foreground">
-                    <span>
-                      Votes: {vote.votesCast}/{vote.totalVotes}
-                    </span>
-                    <span>{vote.timeLeft}</span>
-                  </div>
-                  <Button variant="outline" size="sm" className="h-8 text-xs rounded-full self-start">
-                    View Voting Details
-                  </Button>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
 
-        {/* Developer Interest */}
-        <div className="bg-card border border-border rounded-2xl p-6 shadow-card">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-foreground">Developer Interest</h2>
-          </div>
-          {developerInterest.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No active developer bids at the moment.</p>
-          ) : (
-            <div className="space-y-3 text-sm">
-              {developerInterest.map((dev) => (
-                <div
-                  key={dev.id}
-                  className="flex items-center justify-between border border-border rounded-xl p-3 bg-secondary/40"
-                >
-                  <div>
-                    <p className="font-medium text-foreground text-sm">{dev.land}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {dev.bids} active bid{dev.bids > 1 ? "s" : ""}
-                    </p>
+          <div className="space-y-3">
+            {votingUpdates.map((vote) => (
+              <div
+                key={vote.id}
+                className="border border-border rounded-xl p-4 bg-secondary/10 hover:bg-secondary/30 transition-colors"
+              >
+                <div className="flex items-start justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <Vote className="w-4 h-4 text-primary" />
+                    <p className="font-medium text-foreground text-sm">{vote.land}</p>
                   </div>
-                  <div className="text-right">
-                    <p className="text-xs text-muted-foreground mb-1">Highest bid</p>
-                    <p className="font-semibold text-foreground">{dev.highestBid}</p>
-                    <Button variant="outline" size="sm" className="mt-2 h-8 text-xs rounded-full">
-                      Review Bids
-                    </Button>
+                  <span className="text-[10px] font-medium px-2 py-0.5 rounded bg-background border border-border">
+                    {vote.rule}
+                  </span>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>Progress</span>
+                    <span>{vote.votesCast}/{vote.totalVotes} votes</span>
+                  </div>
+                  <div className="h-1.5 w-full bg-secondary rounded-full overflow-hidden">
+                    <div className="h-full bg-amber-500 w-[80%]" />
+                  </div>
+                  <div className="flex justify-between items-center mt-2">
+                    <span className="text-xs text-amber-600 font-medium">{vote.timeLeft}</span>
+                    <Button variant="ghost" size="sm" className="h-6 text-xs hover:bg-background">Details</Button>
                   </div>
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Recent Activity + Verification */}
-      <div className="grid lg:grid-cols-2 gap-8">
-        {/* Recent Activity */}
-        <div className="bg-card border border-border rounded-2xl p-6 shadow-card">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-foreground">Recent Activity</h2>
-          </div>
-          <div className="space-y-2 text-sm">
-            {recentActivity.map((item, index) => (
-              <div key={index} className="flex items-start gap-2 text-muted-foreground">
-                <Bell className="w-4 h-4 mt-0.5" />
-                <p>{item}</p>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Verification Status */}
-        <div className="bg-card border border-border rounded-2xl p-6 shadow-card">
+        {/* Recent Activity */}
+        <div className="bg-card border border-border rounded-2xl p-6 shadow-sm">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-foreground">Verification Status</h2>
+            <h2 className="text-lg font-semibold text-foreground">Recent Activity</h2>
           </div>
-          <div className="space-y-3 text-sm">
-            {verificationStatus.map((item) => (
-              <div
-                key={item.label}
-                className="flex items-center justify-between border border-border rounded-xl px-3 py-2 bg-secondary/40"
-              >
-                <div className="flex items-center gap-2">
-                  <Users className="w-4 h-4 text-muted-foreground" />
-                  <span className="text-foreground">{item.label}</span>
-                </div>
-                <span className="text-xs px-2 py-1 rounded-full bg-background text-muted-foreground">
-                  {item.value}
-                </span>
+          <div className="relative pl-2 border-l border-border/60 space-y-6 my-2">
+            {recentActivity.map((item, index) => (
+              <div key={index} className="relative pl-4">
+                <span className="absolute -left-[5px] top-1.5 w-2.5 h-2.5 rounded-full bg-background border-2 border-primary" />
+                <p className="text-sm text-foreground">{item}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">Today, 10:23 AM</p>
               </div>
             ))}
           </div>

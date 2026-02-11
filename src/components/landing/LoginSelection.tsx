@@ -10,13 +10,14 @@ const loginTypes = [
     description: "Browse lands, invest in tokenized parcels, track your portfolio, and participate in governance voting.",
     features: ["View verified lands", "Invest with fiat", "Track ROI", "Vote on decisions"],
     role: "investor",
+    href: "http://localhost:8080/login?role=user&userType=individual"
   },
   {
     icon: Building2,
     title: "Property Owners",
     description: "List and manage your properties, track tokens, and handle exit requests.",
     features: ["List properties", "Manage tokens", "Track requests", "Secure payments"],
-    role: "owner", // Assuming role mapping, or keeping 'owner' as internal ID
+    role: "owner",
   },
   {
     icon: Users,
@@ -88,7 +89,17 @@ const LoginSelection = () => {
                 </ul>
 
                 {/* CTA */}
-                <Button variant="card" className="mt-auto" onClick={() => navigate(`/login?role=${type.role}`)}>
+                <Button
+                  variant="card"
+                  className="mt-auto"
+                  onClick={() => {
+                    if (type.href) {
+                      window.location.href = type.href;
+                    } else {
+                      navigate(`/login?role=${type.role}`);
+                    }
+                  }}
+                >
                   Continue
                   <ArrowRight className="w-4 h-4" />
                 </Button>
