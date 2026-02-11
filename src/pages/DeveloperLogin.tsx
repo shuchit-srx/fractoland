@@ -69,19 +69,19 @@ const DeveloperLogin = () => {
     return (
         <div className="min-h-screen bg-background flex">
             {/* Left Branding - Construction Theme */}
-            <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-amber-600/20 to-orange-600/20 relative items-center justify-center p-12 overflow-hidden">
+            <div className="hidden lg:flex lg:w-1/2 bg-black relative items-center justify-center p-12 overflow-hidden">
                 <div className="relative z-10 max-w-md">
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
                         <div className="flex items-center gap-3 mb-8">
-                            <div className="w-14 h-14 bg-amber-500 rounded-2xl flex items-center justify-center shadow-lg">
-                                <HardHat className="w-7 h-7 text-white" />
+                            <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center shadow-lg">
+                                <HardHat className="w-7 h-7 text-black" />
                             </div>
-                            <span className="text-3xl font-bold text-foreground">FractoLand <span className="text-amber-600">Builder</span></span>
+                            <span className="text-3xl font-bold text-white">FractoLand <span className="text-zinc-400">Builder</span></span>
                         </div>
-                        <h2 className="text-4xl font-bold text-foreground mb-4">
+                        <h2 className="text-4xl font-bold text-white mb-4">
                             Construction Management <br /> & Bidding Portal
                         </h2>
-                        <p className="text-muted-foreground text-lg">
+                        <p className="text-zinc-400 text-lg">
                             The exclusive gateway for verified developers to access land parcels, submit tenders, and manage project milestones.
                         </p>
                     </motion.div>
@@ -97,7 +97,7 @@ const DeveloperLogin = () => {
                     </Button>
 
                     <div className="space-y-2">
-                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-100 text-amber-700 text-xs font-semibold uppercase tracking-wider">
+                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-black text-white text-xs font-semibold uppercase tracking-wider">
                             <HardHat className="w-3 h-3" /> Developer Access Only
                         </div>
                         <h1 className="text-3xl font-bold">Builder Login</h1>
@@ -149,12 +149,12 @@ const DeveloperLogin = () => {
                             </div>
                         </div>
 
-                        <Button type="submit" className="w-full h-12 bg-amber-500 hover:bg-amber-600 text-white" disabled={isLoading}>
+                        <Button type="submit" className="w-full h-12 bg-black hover:bg-zinc-800 text-white" disabled={isLoading}>
                             {isLoading ? "Authenticating..." : "Access Dashboard"}
                         </Button>
 
                         <p className="text-center text-sm text-muted-foreground">
-                            New to FractoLand? <a href="/developer/register" className="text-amber-600 hover:underline font-medium">Apply as a Builder</a>
+                            New to FractoLand? <a href="/developer/register" className="text-black hover:underline font-medium">Apply as a Builder</a>
                         </p>
                     </form>
                 </div>

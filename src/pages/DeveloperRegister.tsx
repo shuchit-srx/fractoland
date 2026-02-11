@@ -43,20 +43,20 @@ const DeveloperRegister = () => {
     return (
         <div className="min-h-screen bg-background flex">
             {/* Left Branding */}
-            <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-amber-600/20 to-orange-600/20 relative items-center justify-center p-12">
+            <div className="hidden lg:flex lg:w-1/2 bg-black relative items-center justify-center p-12">
                 <div className="relative z-10 max-w-md">
                     <div className="flex items-center gap-3 mb-8">
-                        <div className="w-14 h-14 bg-amber-500 rounded-2xl flex items-center justify-center shadow-lg">
-                            <HardHat className="w-7 h-7 text-white" />
+                        <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center shadow-lg">
+                            <HardHat className="w-7 h-7 text-black" />
                         </div>
-                        <span className="text-3xl font-bold text-foreground">FractoLand <span className="text-amber-600">Builder</span></span>
+                        <span className="text-3xl font-bold text-white">FractoLand <span className="text-zinc-400">Builder</span></span>
                     </div>
-                    <h2 className="text-4xl font-bold mb-4">Partner with the Best</h2>
+                    <h2 className="text-4xl font-bold text-white mb-4">Partner with the Best</h2>
                     <ul className="space-y-4 mt-8">
                         {["Access pre-approved land parcels", "Guaranteed payment milestones", "Transparent smart contracts"].map(item => (
                             <li key={item} className="flex items-center gap-3">
-                                <CheckCircle2 className="w-5 h-5 text-amber-600" />
-                                <span>{item}</span>
+                                <CheckCircle2 className="w-5 h-5 text-zinc-400" />
+                                <span className="text-zinc-300">{item}</span>
                             </li>
                         ))}
                     </ul>
@@ -114,14 +114,14 @@ const DeveloperRegister = () => {
                             </div>
                         </div>
 
-                        <div className="p-4 bg-amber-50 rounded-lg border border-amber-100 flex gap-3 items-start">
-                            <ShieldCheck className="w-5 h-5 text-amber-600 mt-0.5" />
-                            <p className="text-xs text-amber-800">
+                        <div className="p-4 bg-zinc-50 rounded-lg border border-zinc-200 flex gap-3 items-start">
+                            <ShieldCheck className="w-5 h-5 text-black mt-0.5" />
+                            <p className="text-xs text-zinc-600">
                                 Your account will undergo manual verification. You can bid on projects once your KYC and license are verified (approx. 24-48 hours).
                             </p>
                         </div>
 
-                        <Button type="submit" className="w-full bg-amber-500 hover:bg-amber-600 text-white" disabled={isLoading}>
+                        <Button type="submit" className="w-full bg-black hover:bg-zinc-800 text-white" disabled={isLoading}>
                             {isLoading ? <Loader2 className="animate-spin" /> : "Submit Application"}
                         </Button>
                     </form>
