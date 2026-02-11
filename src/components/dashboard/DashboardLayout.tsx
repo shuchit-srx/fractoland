@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/select";
 import { useAuth, UserRole } from "@/contexts/AuthContext";
 import { motion } from "framer-motion";
-import { Bell, Briefcase, ChevronRight, FileText, Heart, Home, Link2, LogOut, MapPin, Menu, Users, Vote, X } from "lucide-react";
+import { Bell, Briefcase, ChevronRight, FileText, Heart, Home, Link2, LogOut, MapPin, Menu, Users, Vote, X, HardHat, Building } from "lucide-react";
 import { ReactNode, useEffect, useRef, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -36,7 +36,6 @@ const navItems: Record<UserRole, NavItem[]> = {
     { icon: Heart, label: "Interested Lands", href: "/dashboard/user/wishlist" },
     { icon: Bell, label: "Notifications", href: "/dashboard/user/notifications" },
     { icon: Briefcase, label: "Profile", href: "/dashboard/user/profile" },
-    // { icon: Wallet, label: "Wallet", href: "/dashboard/user/wallet" },
   ],
 
   agent: [
@@ -46,7 +45,6 @@ const navItems: Record<UserRole, NavItem[]> = {
     { icon: Link2, label: "Referral Links", href: "/dashboard/agent/links" },
     { icon: Bell, label: "Notifications", href: "/dashboard/agent/notifications" },
     { icon: Briefcase, label: "Profile", href: "/dashboard/agent/profile" },
-    // { icon: Wallet, label: "Earnings", href: "/dashboard/agent/earnings" },
   ],
   owner: [
     { icon: Home, label: "Dashboard", href: "/dashboard/owner" },
@@ -54,8 +52,15 @@ const navItems: Record<UserRole, NavItem[]> = {
     { icon: Vote, label: "Voting", href: "/dashboard/owner/voting" },
     { icon: FileText, label: "Developer Bids", href: "/dashboard/owner/bids" },
     { icon: Bell, label: "Notifications", href: "/dashboard/owner/notifications" },
-    // { icon: Wallet, label: "Payments", href: "/dashboard/owner/payments" },
     { icon: Briefcase, label: "Profile", href: "/dashboard/owner/profile" },
+  ],
+  developer: [
+    { icon: Home, label: "Dashboard", href: "/dashboard/developer" },
+    { icon: MapPin, label: "Browse Lands", href: "/dashboard/developer/lands" },
+    { icon: FileText, label: "My Bids", href: "/dashboard/developer/bids" },
+    { icon: Building, label: "Projects", href: "/dashboard/developer/projects" },
+    { icon: Bell, label: "Notifications", href: "/dashboard/developer/notifications" },
+    { icon: Briefcase, label: "Profile", href: "/dashboard/developer/profile" },
   ]
 };
 
@@ -63,6 +68,7 @@ const roleLabels: Record<UserRole, string> = {
   user: "Individual Investor",
   agent: "Real Estate Consultant",
   owner: "Property Owner",
+  developer: "Real Estate Developer",
 };
 
 interface DashboardLayoutProps {
@@ -83,7 +89,6 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
     }
   }, [location.pathname]);
 
-  // Check localStorage synchronously on first render as fallback
   const getLocalUser = (): User | null => {
     try {
       const stored = localStorage.getItem("fractoland_user");
@@ -96,14 +101,12 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const [localUser, setLocalUser] = useState<User | null>(getLocalUser);
 
   useEffect(() => {
-    // Sync with localStorage changes
     const stored = localStorage.getItem("fractoland_user");
     if (stored) {
       try {
         const parsed = JSON.parse(stored);
         setLocalUser(parsed);
       } catch (e) {
-        // Invalid JSON, clear it
         localStorage.removeItem("fractoland_user");
         setLocalUser(null);
       }
@@ -112,7 +115,6 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
     }
   }, []);
 
-  // Sync localUser when context user updates
   useEffect(() => {
     if (user) {
       setLocalUser(user);
@@ -120,13 +122,11 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   }, [user]);
 
   useEffect(() => {
-    // If no user in context and no user in localStorage, redirect to login
     if (!user && !localUser) {
       navigate("/login");
     }
   }, [user, localUser, navigate]);
 
-  // Use context user if available, otherwise fall back to localStorage user
   const currentUser = user || localUser;
 
   if (!currentUser) {
@@ -137,14 +137,12 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
     );
   }
 
-  // Safety check: ensure role is valid
   const items = navItems[currentUser.role as UserRole] || navItems.user;
 
   const handleRoleChange = async (newRole: UserRole) => {
     if (newRole === currentUser.role) return;
 
     try {
-      // Simulate switching role by re-logging in with same phone but new role
       await login(currentUser.phone, newRole);
       toast.success(`Switched to ${roleLabels[newRole]}`);
       navigate(`/dashboard/${newRole}`);

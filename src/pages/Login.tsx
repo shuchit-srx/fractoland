@@ -34,7 +34,10 @@ const roleConfig = {
 
 const Login = () => {
   const [searchParams] = useSearchParams();
-  const role = (searchParams.get("role") as UserRole) || "user";
+  // Default to user, but ensure we don't accidentally load developer config if url has it
+  const roleParam = searchParams.get("role") as UserRole;
+  const role = (roleParam === 'developer' ? 'user' : roleParam) || "user";
+
   const userType = searchParams.get("userType") || "individual";
   const navigate = useNavigate();
   const { login } = useAuth();
@@ -45,10 +48,10 @@ const Login = () => {
   const [isOtpSent, setIsOtpSent] = useState(false);
   const [isOtpVerified, setIsOtpVerified] = useState(false);
   const [isSendingOtp, setIsSendingOtp] = useState(false);
-
   const [isLoading, setIsLoading] = useState(false);
 
-  const config = roleConfig[role];
+  // Fallback to user config if role is invalid for this page
+  const config = roleConfig[role as keyof typeof roleConfig] || roleConfig.user;
 
   // Dynamic config override for Organization
   if (role === "user" && userType === "organization") {
@@ -158,7 +161,7 @@ const Login = () => {
               Fractional Land Ownership Made Simple
             </h2>
             <p className="text-muted-foreground text-lg leading-relaxed">
-              Join thousands of users, builders, and agents on the most trusted
+              Join thousands of users, property owners, and agents on the most trusted
               blockchain-powered land investment platform.
             </p>
 
@@ -180,9 +183,7 @@ const Login = () => {
                     whileHover={{ scale: 1.1, rotate: 5 }}
                     transition={{ type: "spring", stiffness: 400 }}
                   >
-                    <svg className="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
+                    <CheckCircle2 className="w-5 h-5 text-green-600" />
                   </motion.div>
                   <span className="text-foreground">{feature}</span>
                 </motion.div>
@@ -238,7 +239,7 @@ const Login = () => {
                   <Button
                     variant={r === role ? "default" : "outline"}
                     size="sm"
-                    className="w-full"
+                    className="w-full capitalize"
                     onClick={() => navigate(`/login?role=${r}${r === 'user' ? `&userType=${userType}` : ''}`)}
                   >
                     {r === "user" ? (userType === "organization" ? "Organization" : "Individual") : r === "agent" ? "Consultant" : "Owner"}

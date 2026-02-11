@@ -64,7 +64,7 @@ const BuilderDashboard = () => {
         <div className="bg-card rounded-2xl border border-border p-6 shadow-card">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-semibold text-foreground">Available for Bidding</h2>
-            <Button variant="ghost" size="sm" onClick={() => navigate("/dashboard/builder/lands")}>
+            <Button variant="ghost" size="sm" onClick={() => navigate("/dashboard/developer/lands")}>
               View All <ArrowRight className="w-4 h-4 ml-1" />
             </Button>
           </div>
@@ -100,7 +100,7 @@ const BuilderDashboard = () => {
         <div className="bg-card rounded-2xl border border-border p-6 shadow-card">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-semibold text-foreground">My Bids</h2>
-            <Button variant="ghost" size="sm" onClick={() => navigate("/dashboard/builder/bids")}>
+            <Button variant="ghost" size="sm" onClick={() => navigate("/dashboard/developer/bids")}>
               View All <ArrowRight className="w-4 h-4 ml-1" />
             </Button>
           </div>
@@ -135,15 +135,15 @@ const BuilderDashboard = () => {
       <div className="bg-card rounded-2xl border border-border p-6 shadow-card">
         <h2 className="text-xl font-semibold text-foreground mb-4">Quick Actions</h2>
         <div className="flex flex-wrap gap-4">
-          <Button onClick={() => navigate("/dashboard/builder/lands")}>
+          <Button onClick={() => navigate("/dashboard/developer/lands")}>
             <MapPin className="w-4 h-4 mr-2" />
             Browse Lands
           </Button>
-          <Button variant="outline" onClick={() => navigate("/dashboard/builder/bids")}>
+          <Button variant="outline" onClick={() => navigate("/dashboard/developer/bids")}>
             <FileText className="w-4 h-4 mr-2" />
             Manage Bids
           </Button>
-          <Button variant="outline" onClick={() => navigate("/dashboard/builder/projects")}>
+          <Button variant="outline" onClick={() => navigate("/dashboard/developer/projects")}>
             <Building2 className="w-4 h-4 mr-2" />
             View Projects
           </Button>

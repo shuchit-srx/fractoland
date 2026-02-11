@@ -1,6 +1,6 @@
 import { createContext, ReactNode, useContext, useState } from "react";
 
-export type UserRole = "user" | "agent" | "owner";
+export type UserRole = "user" | "agent" | "owner" | "developer";
 
 interface User {
   id: string;
@@ -42,7 +42,13 @@ const dummyUsers: Record<UserRole, User> = {
     phone: "9876543212",
     role: "owner",
   },
-
+  developer: {
+    id: "5",
+    name: "Bob Builder",
+    email: "builder@fractoland.com",
+    phone: "9876543213",
+    role: "developer",
+  },
 };
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {

@@ -8,7 +8,7 @@ import { WishlistProvider } from "@/contexts/WishlistContext";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { HelmetProvider } from "react-helmet-async";
-import { BrowserRouter, Route, Routes, useLocation, Navigate } from "react-router-dom";
+import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
@@ -23,14 +23,13 @@ import Portfolio from "./pages/dashboard/user/Portfolio";
 import Voting from "./pages/dashboard/user/Voting";
 import Wallet from "./pages/dashboard/user/Wallet";
 
-
+// Owner Pages
 import OwnerAddLand from "./pages/dashboard/OwnerAddLand";
 import OwnerDashboard from "./pages/dashboard/OwnerDashboard";
 import OwnerDeveloperBids from "./pages/dashboard/OwnerDeveloperBids";
 import OwnerLandDetail from "./pages/dashboard/OwnerLandDetail";
 import OwnerLands from "./pages/dashboard/OwnerLands";
 import OwnerPayments from "./pages/dashboard/OwnerPayments";
-// import OwnerProfile from "./pages/dashboard/OwnerProfile"; // Replaced by generic Profile
 import OwnerVoting from "./pages/dashboard/OwnerVoting";
 
 // Generic Profile
@@ -44,18 +43,20 @@ import AgentLandDetail from "./pages/dashboard/agent/LandDetail";
 import ReferralLinks from "./pages/dashboard/agent/ReferralLinks";
 import Referrals from "./pages/dashboard/agent/Referrals";
 
+// Developer (Builder) Pages
+import BuilderDashboard from "./pages/dashboard/BuilderDashboard";
+import DeveloperLanding from "./pages/DeveloperLanding";
+import DeveloperLogin from "./pages/DeveloperLogin";
+import DeveloperRegister from "./pages/DeveloperRegister";
 
 import Wishlist from "./pages/dashboard/user/Wishlist";
 import WishlistDetail from "./pages/dashboard/user/WishlistDetail";
 
-// Scroll To Top Component
 const ScrollToTop = () => {
   const { pathname } = useLocation();
-
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [pathname]);
-
   return null;
 };
 
@@ -76,6 +77,11 @@ const App = () => (
                   <Route path="/" element={<Index />} />
                   <Route path="/login" element={<Login />} />
                   <Route path="/register" element={<Register />} />
+
+                  {/* Isolated Developer Portal Routes */}
+                  <Route path="/developer" element={<DeveloperLanding />} />
+                  <Route path="/developer/login" element={<DeveloperLogin />} />
+                  <Route path="/developer/register" element={<DeveloperRegister />} />
 
                   {/* Dashboard Routes with Persistent Layout */}
                   <Route element={<DashboardLayout />}>
@@ -111,6 +117,14 @@ const App = () => (
                     <Route path="/dashboard/agent/profile" element={<Profile />} />
                     <Route path="/dashboard/agent/explore" element={<AgentExploreLands />} />
                     <Route path="/dashboard/agent/land/:id" element={<AgentLandDetail />} />
+
+                    {/* Developer Dashboard Routes */}
+                    <Route path="/dashboard/developer" element={<BuilderDashboard />} />
+                    <Route path="/dashboard/developer/lands" element={<BuilderDashboard />} />
+                    <Route path="/dashboard/developer/bids" element={<BuilderDashboard />} />
+                    <Route path="/dashboard/developer/projects" element={<BuilderDashboard />} />
+                    <Route path="/dashboard/developer/notifications" element={<Notifications />} />
+                    <Route path="/dashboard/developer/profile" element={<Profile />} />
                   </Route>
 
                   <Route path="*" element={<NotFound />} />
