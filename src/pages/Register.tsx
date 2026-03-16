@@ -2,8 +2,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth, UserRole } from "@/contexts/AuthContext";
+import { getWalletSignature } from "@/lib/siwe";
 import { motion } from "framer-motion";
-import { ArrowLeft, Building2, CheckCircle2, Loader2, Mail, MapPin, Phone, ShieldCheck, User, Users } from "lucide-react";
+import { ArrowLeft, Building2, CheckCircle2, Loader2, Mail, MapPin, Phone, ShieldCheck, User, Users, Wallet as WalletIcon } from "lucide-react";
 import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
@@ -37,7 +38,7 @@ const Register = () => {
   const role = (searchParams.get("role") as UserRole) || "user";
   const userType = searchParams.get("userType") || "individual";
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { sendOtp: sendOtpApi, checkOtp: checkOtpApi, verifyOtpAndLogin } = useAuth();
 
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
@@ -48,8 +49,12 @@ const Register = () => {
   const [otp, setOtp] = useState("");
   const [isOtpSent, setIsOtpSent] = useState(false);
   const [isOtpVerified, setIsOtpVerified] = useState(false);
+  const [otpError, setOtpError] = useState<string | null>(null);
+  const [isCheckingOtp, setIsCheckingOtp] = useState(false);
   const [isSendingOtp, setIsSendingOtp] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [walletSignature, setWalletSignature] = useState<{ message: string; signature: string; address: string } | null>(null);
+  const [isLinkingWallet, setIsLinkingWallet] = useState(false);
 
   const config = roleConfig[role];
 
@@ -67,48 +72,90 @@ const Register = () => {
       return;
     }
     setIsSendingOtp(true);
-    setTimeout(() => {
-      setIsSendingOtp(false);
+    try {
+      const { devOtp } = await sendOtpApi(phone, countryCode, "register");
       setIsOtpSent(true);
       toast.success("OTP sent successfully to your phone");
-    }, 1500);
+      if (devOtp) toast.info(`Dev OTP: ${devOtp}`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to send OTP");
+    } finally {
+      setIsSendingOtp(false);
+    }
   };
 
-  const handleVerifyOtp = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.replace(/\D/g, '').slice(0, 6);
+  const handleOtpChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/\D/g, "").slice(0, 6);
     setOtp(value);
-    if (value.length === 6) {
-      if (value === "123456") {
+    setOtpError(null);
+    if (value.length === 6 && !isOtpVerified) {
+      verifyOtpWhenComplete(value);
+    }
+  };
+
+  const verifyOtpWhenComplete = async (sixDigitOtp: string) => {
+    if (!phone.trim() || phone.replace(/\D/g, "").length < 10) return;
+    setIsCheckingOtp(true);
+    setOtpError(null);
+    try {
+      const result = await checkOtpApi(phone, sixDigitOtp, countryCode, "register");
+      if (result.valid) {
         setIsOtpVerified(true);
-        toast.success("Phone number verified successfully");
+        setOtpError(null);
+        toast.success("Phone number verified");
       } else {
-        toast.error("Invalid OTP. Try 123456");
+        setOtpError(result.error || "Invalid OTP");
       }
+    } catch {
+      setOtpError("Could not verify OTP. Try again.");
+    } finally {
+      setIsCheckingOtp(false);
+    }
+  };
+
+  const handleLinkWallet = async () => {
+    setIsLinkingWallet(true);
+    try {
+      const result = await getWalletSignature("Sign in to FractoLand to complete registration.");
+      setWalletSignature(result);
+      toast.success("Wallet ready. Click Create Account to finish.");
+    } catch (e) {
+      if ((e as { code?: number }).code === 4001) {
+        toast.error("Signature rejected");
+      } else {
+        toast.error(e instanceof Error ? e.message : "Failed to connect wallet");
+      }
+    } finally {
+      setIsLinkingWallet(false);
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!name.trim()) return toast.error("Please enter your full name");
     if (!email.trim()) return toast.error("Please enter your email");
-    if (!phone.trim()) return toast.error("Please enter your phone number");
-    if (!isOtpVerified) return toast.error("Please verify your phone number");
+    if (!phone.trim() || phone.replace(/\D/g, "").length < 10) return toast.error("Please enter a valid phone number");
+    if (!isOtpVerified || otp.length !== 6) return toast.error("Please enter and verify the 6-digit OTP sent to your phone");
     if (!kycType) return toast.error("Please select a KYC document type");
     if (!kycId.trim()) return toast.error("Please enter your ID number");
+    if (!walletSignature) return toast.error("Please connect and sign with your wallet to complete registration");
 
     setIsLoading(true);
-
     try {
-      const success = await login(phone, role);
-      if (success) {
-        toast.success("Registration successful! Welcome to FractoLand!");
-        setTimeout(() => {
-          navigate(`/dashboard/${role}`);
-        }, 100);
-      }
-    } catch (error) {
-      toast.error("Registration failed. Please try again.");
+      await verifyOtpAndLogin(phone, otp, countryCode, {
+        name: name.trim(),
+        email: email.trim(),
+        role,
+        kyc_type: kycType,
+        kyc_id: kycId.trim(),
+        wallet_message: walletSignature.message,
+        wallet_signature: walletSignature.signature,
+      });
+      toast.success("Registration successful! Welcome to FractoLand!");
+      const dashboardRole = role === "user" ? "user" : role;
+      navigate(`/dashboard/${dashboardRole}`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Registration failed.");
     } finally {
       setIsLoading(false);
     }
@@ -268,7 +315,7 @@ const Register = () => {
               <div className="space-y-3">
                 <div className="flex gap-2">
                   <div className="w-[100px]">
-                    <Select value={countryCode} onValueChange={setCountryCode}>
+                    <Select value={countryCode} onValueChange={setCountryCode} disabled={isOtpVerified}>
                       <SelectTrigger className="h-12 px-3 flex items-center">
                         <SelectValue placeholder="+91" />
                       </SelectTrigger>
@@ -287,35 +334,28 @@ const Register = () => {
                     </div>
 
                     <Input
-                      className="pl-10 h-12"
+                      className={`pl-10 h-12 ${isOtpVerified ? "pr-10" : ""}`}
                       placeholder="98765 43210"
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
-                      disabled={isOtpVerified}
+                      disabled={isOtpSent || isOtpVerified}
                     />
-
                     {isOtpVerified && (
-                      <CheckCircle2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-green-500" />
+                      <CheckCircle2 className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-green-600" />
                     )}
                   </div>
                 </div>
 
 
-                {!isOtpVerified && (
+                {!isOtpSent && (
                   <Button
                     type="button"
                     variant="secondary"
                     className="w-full h-11"
                     onClick={handleSendOtp}
-                    disabled={isSendingOtp || isOtpSent || phone.length < 10}
+                    disabled={isSendingOtp || phone.replace(/\D/g, "").length < 10}
                   >
-                    {isSendingOtp ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : isOtpSent ? (
-                      "OTP Sent"
-                    ) : (
-                      "Send OTP"
-                    )}
+                    {isSendingOtp ? <Loader2 className="w-4 h-4 animate-spin" /> : "Send OTP"}
                   </Button>
                 )}
 
@@ -325,17 +365,26 @@ const Register = () => {
                     animate={{ height: "auto", opacity: 1 }}
                     className="space-y-2 pt-2"
                   >
-                    <label className="text-xs text-muted-foreground">Enter 6-digit OTP (Try: 123456)</label>
+                    <label className="text-xs text-muted-foreground">Enter 6-digit OTP</label>
                     <Input
                       type="text"
                       inputMode="numeric"
                       pattern="\d*"
                       maxLength={6}
                       placeholder="Enter OTP"
-                      className="h-12 text-center text-lg tracking-widest"
+                      className={`h-12 text-center text-lg tracking-widest ${otpError ? "border-red-500 ring-2 ring-red-500/50 focus-visible:ring-red-500" : ""}`}
                       value={otp}
-                      onChange={handleVerifyOtp}
+                      onChange={handleOtpChange}
+                      disabled={isCheckingOtp}
                     />
+                    {isCheckingOtp && (
+                      <p className="text-xs text-muted-foreground flex items-center gap-1">
+                        <Loader2 className="w-3 h-3 animate-spin" /> Verifying...
+                      </p>
+                    )}
+                    {otpError && (
+                      <p className="text-sm text-red-600 font-medium">{otpError}</p>
+                    )}
                   </motion.div>
                 )}
               </div>
@@ -374,7 +423,45 @@ const Register = () => {
               </div>
             </div>
 
-            <Button type="submit" className="w-full h-12 text-base" disabled={isLoading}>
+            {/* Wallet link (required to complete registration) */}
+            <div className="space-y-4 p-4 rounded-lg border border-border">
+              <div className="flex items-center gap-2">
+                <WalletIcon className="w-5 h-5 text-primary" />
+                <h3 className="font-semibold">Link Wallet (required)</h3>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Connect your Ethereum/Polygon wallet to complete registration. You can also use this wallet to sign in later.
+              </p>
+              {walletSignature ? (
+                <div className="flex items-center justify-between gap-4 p-3 bg-secondary/50 rounded-lg">
+                  <code className="text-sm font-mono text-foreground">
+                    {walletSignature.address.slice(0, 6)}...{walletSignature.address.slice(-4)}
+                  </code>
+                  <span className="text-xs text-green-600 font-medium flex items-center gap-1">
+                    <CheckCircle2 className="w-4 h-4" /> Ready
+                  </span>
+                </div>
+              ) : (
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full h-11"
+                  onClick={handleLinkWallet}
+                  disabled={isLinkingWallet || !isOtpVerified}
+                >
+                  {isLinkingWallet ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <>
+                      <WalletIcon className="w-4 h-4" />
+                      Connect & sign wallet
+                    </>
+                  )}
+                </Button>
+              )}
+            </div>
+
+            <Button type="submit" className="w-full h-12 text-base" disabled={isLoading || !isOtpVerified || !walletSignature}>
               {isLoading ? (
                 <span className="flex items-center justify-center gap-2">
                   <Loader2 className="w-4 h-4 animate-spin" />

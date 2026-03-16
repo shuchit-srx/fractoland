@@ -2,8 +2,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth, UserRole } from "@/contexts/AuthContext";
+import { getWalletSignature } from "@/lib/siwe";
 import { motion } from "framer-motion";
-import { ArrowLeft, Building2, CheckCircle2, Loader2, MapPin, Phone, User, Users } from "lucide-react";
+import { ArrowLeft, Building2, CheckCircle2, Loader2, MapPin, Phone, User, Users, Wallet as WalletIcon } from "lucide-react";
 import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
@@ -40,13 +41,16 @@ const Login = () => {
 
   const userType = searchParams.get("userType") || "individual";
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { sendOtp: sendOtpApi, checkOtp: checkOtpApi, verifyOtpAndLogin, loginWithWallet } = useAuth();
 
   const [phone, setPhone] = useState("");
+  const [isWalletLogin, setIsWalletLogin] = useState(false);
   const [countryCode, setCountryCode] = useState("+91");
   const [otp, setOtp] = useState("");
   const [isOtpSent, setIsOtpSent] = useState(false);
   const [isOtpVerified, setIsOtpVerified] = useState(false);
+  const [otpError, setOtpError] = useState<string | null>(null);
+  const [isCheckingOtp, setIsCheckingOtp] = useState(false);
   const [isSendingOtp, setIsSendingOtp] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -67,46 +71,84 @@ const Login = () => {
       return;
     }
     setIsSendingOtp(true);
-    // Simulate API call
-    setTimeout(() => {
-      setIsSendingOtp(false);
+    try {
+      const { devOtp } = await sendOtpApi(phone, countryCode, "login");
       setIsOtpSent(true);
       toast.success("OTP sent successfully to your phone");
-    }, 1500);
+      if (devOtp) toast.info(`Dev OTP: ${devOtp}`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to send OTP");
+    } finally {
+      setIsSendingOtp(false);
+    }
   };
 
-  const handleVerifyOtp = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.replace(/\D/g, '').slice(0, 6);
+  const handleOtpChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/\D/g, "").slice(0, 6);
     setOtp(value);
-    if (value.length === 6) {
-      if (value === "123456") {
+    setOtpError(null);
+    if (value.length === 6 && !isOtpVerified) {
+      verifyOtpWhenComplete(value);
+    }
+  };
+
+  const verifyOtpWhenComplete = async (sixDigitOtp: string) => {
+    if (!phone.trim() || phone.replace(/\D/g, "").length < 10) return;
+    setIsCheckingOtp(true);
+    setOtpError(null);
+    try {
+      const result = await checkOtpApi(phone, sixDigitOtp, countryCode, "login");
+      if (result.valid) {
         setIsOtpVerified(true);
-        toast.success("Phone number verified successfully");
+        setOtpError(null);
+        toast.success("Phone number verified");
       } else {
-        toast.error("Invalid OTP. Try 123456");
+        setOtpError(result.error || "Invalid OTP");
       }
+    } catch {
+      setOtpError("Could not verify OTP. Try again.");
+    } finally {
+      setIsCheckingOtp(false);
+    }
+  };
+
+  const handleWalletLogin = async () => {
+    setIsWalletLogin(true);
+    try {
+      const { message, signature } = await getWalletSignature("Sign in to FractoLand.");
+      const u = await loginWithWallet(message, signature);
+      toast.success("Login successful!");
+      const dashboardRole = u.role === "user" ? "user" : u.role;
+      navigate(`/dashboard/${dashboardRole}`);
+    } catch (e) {
+      if ((e as { code?: number }).code === 4001) {
+        toast.error("Signature rejected");
+      } else {
+        toast.error(e instanceof Error ? e.message : "Login with wallet failed. Register first and link your wallet.");
+      }
+    } finally {
+      setIsWalletLogin(false);
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    // DEMO MODE: Bypass OTP and Phone validation for easy access
-    const loginPhone = phone.trim() || "9999999999";
-
+    if (!phone.trim() || phone.replace(/\D/g, "").length < 10) {
+      toast.error("Please enter a valid phone number");
+      return;
+    }
+    if (!isOtpVerified || otp.length !== 6) {
+      toast.error("Please enter and verify the 6-digit OTP sent to your phone");
+      return;
+    }
     setIsLoading(true);
-
     try {
-      const success = await login(loginPhone, role);
-      if (success) {
-        toast.success("Login successful!");
-        // Wait a bit to ensure state is updated
-        setTimeout(() => {
-          navigate(`/dashboard/${role}`);
-        }, 100);
-      }
-    } catch (error) {
-      toast.error("Authentication failed. Please try again.");
+      await verifyOtpAndLogin(phone, otp, countryCode);
+      toast.success("Login successful!");
+      const dashboardRole = role === "user" ? "user" : role;
+      navigate(`/dashboard/${dashboardRole}`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Authentication failed.");
     } finally {
       setIsLoading(false);
     }
@@ -251,13 +293,40 @@ const Login = () => {
 
           <form onSubmit={handleSubmit} className="space-y-6">
 
+            {/* Sign in with wallet */}
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full h-12 text-base"
+              onClick={handleWalletLogin}
+              disabled={isWalletLogin}
+            >
+              {isWalletLogin ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <>
+                  <WalletIcon className="w-4 h-4" />
+                  Sign in with wallet
+                </>
+              )}
+            </Button>
+
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t border-border" />
+              </div>
+              <div className="relative flex justify-center text-xs">
+                <span className="bg-background px-4 text-muted-foreground">Or sign in with phone</span>
+              </div>
+            </div>
+
             {/* Phone & OTP */}
             <div className="space-y-2">
               <label className="text-sm font-medium text-foreground">Phone Number *</label>
               <div className="space-y-3">
                 <div className="flex gap-2">
                   <div className="w-[100px]">
-                    <Select value={countryCode} onValueChange={setCountryCode}>
+                    <Select value={countryCode} onValueChange={setCountryCode} disabled={isOtpVerified}>
                       <SelectTrigger className="h-12 px-3 flex items-center">
                         <SelectValue placeholder="+91" />
                       </SelectTrigger>
@@ -276,29 +345,28 @@ const Login = () => {
                     </div>
 
                     <Input
-                      className="pl-10 h-12"
+                      className={`pl-10 h-12 ${isOtpVerified ? "pr-10" : ""}`}
                       placeholder="98765 43210"
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
-                      disabled={isOtpVerified}
+                      disabled={isOtpSent || isOtpVerified}
                     />
-
                     {isOtpVerified && (
-                      <CheckCircle2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-green-500" />
+                      <CheckCircle2 className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-green-600" />
                     )}
                   </div>
                 </div>
 
 
-                {!isOtpVerified && (
+                {!isOtpSent && (
                   <Button
                     type="button"
                     variant="secondary"
                     className="w-full h-11"
                     onClick={handleSendOtp}
-                    disabled={isSendingOtp || isOtpSent || phone.length < 10}
+                    disabled={isSendingOtp || phone.replace(/\D/g, "").length < 10}
                   >
-                    {isSendingOtp ? <Loader2 className="w-4 h-4 animate-spin" /> : isOtpSent ? "OTP Sent" : "Send OTP"}
+                    {isSendingOtp ? <Loader2 className="w-4 h-4 animate-spin" /> : "Send OTP"}
                   </Button>
                 )}
 
@@ -308,27 +376,36 @@ const Login = () => {
                     animate={{ height: "auto", opacity: 1 }}
                     className="space-y-2 pt-2"
                   >
-                    <label className="text-xs text-muted-foreground">Enter 6-digit OTP (Try: 123456)</label>
+                    <label className="text-xs text-muted-foreground">Enter 6-digit OTP</label>
                     <Input
                       type="text"
                       inputMode="numeric"
                       pattern="\d*"
                       maxLength={6}
                       placeholder="Enter OTP"
-                      className="h-12 text-center text-lg tracking-widest"
+                      className={`h-12 text-center text-lg tracking-widest ${otpError ? "border-red-500 ring-2 ring-red-500/50 focus-visible:ring-red-500" : ""}`}
                       value={otp}
-                      onChange={handleVerifyOtp}
+                      onChange={handleOtpChange}
+                      disabled={isCheckingOtp}
                     />
+                    {isCheckingOtp && (
+                      <p className="text-xs text-muted-foreground flex items-center gap-1">
+                        <Loader2 className="w-3 h-3 animate-spin" /> Verifying...
+                      </p>
+                    )}
+                    {otpError && (
+                      <p className="text-sm text-red-600 font-medium">{otpError}</p>
+                    )}
                   </motion.div>
                 )}
               </div>
             </div>
 
             <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-              <Button
+                <Button
                 type="submit"
                 className="w-full h-12 text-base relative overflow-hidden"
-                disabled={isLoading}
+                disabled={isLoading || !isOtpVerified}
               >
                 {isLoading && (
                   <motion.div

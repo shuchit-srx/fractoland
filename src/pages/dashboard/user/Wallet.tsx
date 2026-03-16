@@ -1,3 +1,4 @@
+import LinkWalletCard from "@/components/wallet/LinkWalletCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { motion } from "framer-motion";
@@ -87,6 +88,9 @@ const Wallet = () => {
           </div>
         </div>
       </motion.div>
+
+      {/* Link Web3 Wallet (SIWE) */}
+      <LinkWalletCard />
 
       {/* Quick Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
