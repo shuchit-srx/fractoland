@@ -7,6 +7,7 @@ import {
   useState,
 } from "react";
 import * as authApi from "@/lib/authApi";
+import { getStoredReferralCode } from "@/lib/referralsApi";
 import { getAccessToken } from "@/lib/api";
 
 export type UserRole =
@@ -178,6 +179,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         kyc_id?: string;
         wallet_message: string;
         wallet_signature: string;
+        referral_code?: string;
       }
     ): Promise<User> => {
       const cleaned = phone.replace(/\D/g, "");
@@ -193,6 +195,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             role: authApi.roleToApi(registerPayload.role),
             kyc_type: registerPayload.kyc_type,
             kyc_id: registerPayload.kyc_id,
+            referral_code: registerPayload.referral_code ?? getStoredReferralCode() ?? undefined,
             wallet_message: registerPayload.wallet_message,
             wallet_signature: registerPayload.wallet_signature,
           }

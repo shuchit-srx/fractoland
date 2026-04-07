@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { useWishlist } from "@/contexts/WishlistContext";
 import { generateLandPieces } from "@/data/mockLandData";
 import { createInvestment, paymentCallback } from "@/lib/dashboardApi";
+import { getStoredReferralCode } from "@/lib/referralsApi";
 import { getVentureById, ventureDetailToLandData } from "@/lib/venturesApi";
 import { AnimatePresence, motion } from "framer-motion";
 import { AlertCircle, AlertTriangle, ArrowLeft, Check, CheckCircle2, ChevronLeft, ChevronRight, CreditCard, Download, FileText, Loader2, MapPin, Maximize2, Shield, Users, X } from "lucide-react";
@@ -110,10 +111,12 @@ const WishlistDetail = () => {
 
         setIsPaying(true);
         try {
+            const ref = getStoredReferralCode();
             const result = await createInvestment({
                 venture_id: land.id,
                 token_count: selectedPiecesCount,
                 payment_method: method,
+                referral_code: ref || undefined,
             });
 
             if (result.status === "completed") {

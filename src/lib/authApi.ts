@@ -44,6 +44,8 @@ export interface VerifyOtpRegisterPayload extends VerifyOtpLoginPayload {
   kyc_id?: string;
   referred_by_agent_id?: string;
   referred_by_link_id?: string;
+  /** Alternative to referred_by_link_id; server resolves active link by code. */
+  referral_code?: string;
   wallet_message: string;
   wallet_signature: string;
 }

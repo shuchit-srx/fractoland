@@ -91,7 +91,7 @@ function formatInr(value: number | null | undefined): string {
   return new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(value);
 }
 
-function formatLockIn(months: number | null | undefined): string {
+export function formatLockIn(months: number | null | undefined): string {
   if (months == null) return "—";
   if (months === 12) return "12 months";
   if (months === 18) return "18 months";
@@ -108,11 +108,16 @@ export async function getVentures(params?: {
   min_value?: number;
   limit?: number;
   offset?: number;
+  /** Use `me` when authenticated to list your own ventures (owners). */
+  owner_id?: string;
+  mature_for_bid?: string;
 }): Promise<VenturesListResponse> {
   const search = new URLSearchParams();
   if (params?.status) search.set("status", params.status);
   if (params?.state) search.set("state", params.state);
   if (params?.min_value != null) search.set("min_value", String(params.min_value));
+  if (params?.owner_id) search.set("owner_id", params.owner_id);
+  if (params?.mature_for_bid) search.set("mature_for_bid", params.mature_for_bid);
   if (params?.limit != null) search.set("limit", String(params.limit));
   if (params?.offset != null) search.set("offset", String(params.offset));
   const q = search.toString();

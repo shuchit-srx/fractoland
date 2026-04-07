@@ -8,6 +8,7 @@ import { WishlistProvider } from "@/contexts/WishlistContext";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { HelmetProvider } from "react-helmet-async";
+import { ReferralCapture } from "@/components/ReferralCapture";
 import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
@@ -70,6 +71,7 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter>
+            <ReferralCapture />
             <ScrollToTop />
             <AuthProvider>
               <WishlistProvider>

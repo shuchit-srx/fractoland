@@ -70,6 +70,8 @@ export interface CreateInvestmentPayload {
   venture_id: string;
   token_count: number;
   payment_method: "wallet" | "gateway";
+  /** Optional agent referral code (from registration link or stored session). */
+  referral_code?: string | null;
 }
 
 export interface CreateInvestmentResponse {
