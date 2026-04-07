@@ -54,6 +54,10 @@ const InvestorDashboard = () => {
       const pollsData = pollsRes.status === "fulfilled" ? pollsRes.value : null;
       const venturesData = venturesRes.status === "fulfilled" ? venturesRes.value : null;
 
+      const activePollItems = pollsData?.items ?? [];
+      const pendingVotePolls = activePollItems.filter((p) => !p.voted);
+      const pendingVoteCount = pendingVotePolls.length;
+
       if (statsData?.stats && statsData?.wallet) {
         const s = statsData.stats;
         const w = statsData.wallet;
@@ -61,12 +65,12 @@ const InvestorDashboard = () => {
           totalInvested: formatInr(s.total_invested),
           activeLands: s.active_investments,
           walletBalance: formatInr(w.balance),
-          pendingVotes: pollsData?.total ?? 0,
+          pendingVotes: pendingVoteCount,
           statsChange: [
             s.current_value > s.total_invested ? `+${(((s.current_value - s.total_invested) / s.total_invested) * 100).toFixed(1)}%` : "—",
             `${s.active_investments} land(s)`,
             "Available",
-            (pollsData?.total ?? 0) > 0 ? "Action needed" : "None",
+            pendingVoteCount > 0 ? "Action needed" : "None",
           ],
         });
       } else {
@@ -74,13 +78,13 @@ const InvestorDashboard = () => {
           totalInvested: formatInr(0),
           activeLands: 0,
           walletBalance: formatInr(0),
-          pendingVotes: 0,
-          statsChange: ["—", "0", "Available", "None"],
+          pendingVotes: pendingVoteCount,
+          statsChange: ["—", "0", "Available", pendingVoteCount > 0 ? "Action needed" : "None"],
         });
       }
 
       setInvestments(invData?.items ?? []);
-      setPolls(pollsData?.items ?? []);
+      setPolls(pendingVotePolls);
 
       if (venturesData?.items) {
         const sorted = [...venturesData.items].sort((a, b) => {

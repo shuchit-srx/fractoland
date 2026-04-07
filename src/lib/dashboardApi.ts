@@ -152,7 +152,7 @@ export async function withdrawFunds(payload: { amount: number }): Promise<{ id: 
   return data;
 }
 
-/** GET /polls (active) */
+/** GET /polls — scoped to ventures you hold completed tokens in; includes vote state when authenticated */
 export interface PollItem {
   id: string;
   venture_id: string;
@@ -160,10 +160,18 @@ export interface PollItem {
   type: string | null;
   question: string;
   description: string | null;
+  rule: string | null;
+  starts_at: string | null;
   ends_at: string | null;
   status: string;
+  result: string | null;
   yes_count: number;
   no_count: number;
+  total_eligible_tokens: number | null;
+  voted: boolean;
+  your_vote: "yes" | "no" | null;
+  your_token_weight: number | null;
+  eligible_token_weight: number;
 }
 
 export interface PollsListResponse {
@@ -171,14 +179,42 @@ export interface PollsListResponse {
   total: number;
 }
 
-export async function getActivePolls(params?: { limit?: number; offset?: number }): Promise<PollsListResponse> {
+export async function getPolls(params?: {
+  status?: "active" | "closed" | "all";
+  limit?: number;
+  offset?: number;
+}): Promise<PollsListResponse> {
   const search = new URLSearchParams();
-  search.set("status", "active");
+  search.set("status", params?.status ?? "active");
   if (params?.limit != null) search.set("limit", String(params.limit));
   if (params?.offset != null) search.set("offset", String(params.offset));
   const res = await api.get(`/polls?${search.toString()}`);
   const data = await res.json();
   if (!res.ok) throw new Error(data.message || data.error || "Failed to load polls");
+  return data;
+}
+
+/** @deprecated alias — use getPolls({ status: "active" }) */
+export async function getActivePolls(params?: { limit?: number; offset?: number }): Promise<PollsListResponse> {
+  return getPolls({ status: "active", ...params });
+}
+
+/** GET /polls/:id */
+export async function getPoll(id: string): Promise<PollItem> {
+  const res = await api.get(`/polls/${id}`);
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || data.error || "Failed to load poll");
+  return data;
+}
+
+/** POST /polls/:id/vote */
+export async function castPollVote(
+  pollId: string,
+  payload: { vote: "yes" | "no" }
+): Promise<{ success: boolean; token_weight: number; vote: string }> {
+  const res = await api.post(`/polls/${pollId}/vote`, payload);
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || data.error || "Failed to cast vote");
   return data;
 }
 
