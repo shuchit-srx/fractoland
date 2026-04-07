@@ -3,12 +3,14 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/contexts/AuthContext";
 import {
+  createGovtApiToken,
   getAdminAnalytics,
   getAdminAuditLogs,
   getAdminDeveloperBids,
   getAdminPayments,
   getAdminPolls,
   getAdminVentures,
+  listGovtApiTokens,
   patchAdminDeveloperBid,
   patchAdminVenture,
   type AdminAnalytics,
@@ -18,6 +20,8 @@ import {
   type AdminPollRow,
   type AdminVentureRow,
 } from "@/lib/adminApi";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { formatInr } from "@/lib/dashboardApi";
 import { Loader2 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
@@ -31,7 +35,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-const TAB_VALUES = ["overview", "ventures", "resale", "polls", "bids", "payments", "audit"] as const;
+const TAB_VALUES = ["overview", "ventures", "resale", "polls", "bids", "payments", "audit", "govt"] as const;
 type AdminTab = (typeof TAB_VALUES)[number];
 
 const BID_STATUSES = ["pending", "approved", "rejected", "outbid"] as const;
@@ -107,6 +111,7 @@ const AdminConsole = () => {
           <TabsTrigger value="bids">Developer bids</TabsTrigger>
           <TabsTrigger value="payments">Payments</TabsTrigger>
           <TabsTrigger value="audit">Audit log</TabsTrigger>
+          <TabsTrigger value="govt">Govt API</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="mt-6 space-y-4">
@@ -141,6 +146,10 @@ const AdminConsole = () => {
 
         <TabsContent value="audit" className="mt-6">
           <AuditPanel />
+        </TabsContent>
+
+        <TabsContent value="govt" className="mt-6">
+          <GovtApiPanel />
         </TabsContent>
       </Tabs>
     </div>
@@ -633,6 +642,102 @@ function AuditPanel() {
             </table>
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+function GovtApiPanel() {
+  const [name, setName] = useState("regulator-readonly");
+  const [permList, setPermList] = useState(true);
+  const [permRead, setPermRead] = useState(true);
+  const [permOwnership, setPermOwnership] = useState(false);
+  const [createdToken, setCreatedToken] = useState<string | null>(null);
+  const [tokens, setTokens] = useState<{ id: string; name: string; last_used_at: string | null; created_at: string }[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  const loadTokens = useCallback(async () => {
+    try {
+      const res = await listGovtApiTokens();
+      setTokens(res.items);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to list tokens");
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadTokens();
+  }, [loadTokens]);
+
+  const create = async () => {
+    setLoading(true);
+    setCreatedToken(null);
+    try {
+      const res = await createGovtApiToken({
+        name,
+        permissions: {
+          "ventures.list": permList,
+          "ventures.read": permRead,
+          "ownership.read": permOwnership,
+        },
+      });
+      setCreatedToken(res.token);
+      toast.success(res.message);
+      await loadTokens();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Create failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="space-y-6 max-w-2xl">
+      <p className="text-sm text-muted-foreground">
+        Issue bearer tokens for government read APIs under <code className="text-xs bg-secondary px-1 rounded">/govt/v1/*</code>. Each request is logged in{" "}
+        <code className="text-xs bg-secondary px-1 rounded">govt_api_access_logs</code>. Use header{" "}
+        <code className="text-xs bg-secondary px-1 rounded">Authorization: Bearer &lt;token&gt;</code>.
+      </p>
+      <div className="rounded-2xl border border-border bg-card p-6 space-y-4">
+        <div className="space-y-2">
+          <Label>Token label</Label>
+          <Input value={name} onChange={(e) => setName(e.target.value)} />
+        </div>
+        <div className="space-y-2 text-sm">
+          <label className="flex items-center gap-2">
+            <input type="checkbox" checked={permList} onChange={(e) => setPermList(e.target.checked)} />
+            ventures.list — GET /govt/v1/ventures
+          </label>
+          <label className="flex items-center gap-2">
+            <input type="checkbox" checked={permRead} onChange={(e) => setPermRead(e.target.checked)} />
+            ventures.read — GET /govt/v1/ventures/:id
+          </label>
+          <label className="flex items-center gap-2">
+            <input type="checkbox" checked={permOwnership} onChange={(e) => setPermOwnership(e.target.checked)} />
+            ownership.read — GET /govt/v1/ventures/:id/ownership
+          </label>
+        </div>
+        <Button type="button" onClick={() => void create()} disabled={loading}>
+          {loading ? "Creating…" : "Create token"}
+        </Button>
+        {createdToken ? (
+          <div className="rounded-lg bg-amber-500/10 border border-amber-500/30 p-3 text-sm break-all">
+            <p className="font-medium text-foreground mb-1">Copy now — shown once</p>
+            <code>{createdToken}</code>
+          </div>
+        ) : null}
+      </div>
+      <div className="rounded-2xl border border-border bg-card p-6">
+        <h3 className="font-semibold text-foreground mb-3">Active tokens (hashes stored; secret not shown)</h3>
+        <ul className="text-sm space-y-2 text-muted-foreground">
+          {tokens.map((t) => (
+            <li key={t.id} className="flex justify-between gap-4 border-b border-border/60 pb-2">
+              <span>{t.name}</span>
+              <span className="text-xs whitespace-nowrap">last used: {t.last_used_at ? new Date(t.last_used_at).toLocaleString() : "never"}</span>
+            </li>
+          ))}
+          {tokens.length === 0 ? <li>None yet.</li> : null}
+        </ul>
       </div>
     </div>
   );

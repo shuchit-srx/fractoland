@@ -54,6 +54,9 @@ import DeveloperRegister from "./pages/DeveloperRegister";
 import Wishlist from "./pages/dashboard/user/Wishlist";
 import WishlistDetail from "./pages/dashboard/user/WishlistDetail";
 import AdminConsole from "./pages/dashboard/AdminConsole";
+import DeveloperBrowseLands from "./pages/dashboard/developer/DeveloperBrowseLands";
+import DeveloperMyBids from "./pages/dashboard/developer/DeveloperMyBids";
+import DeveloperProjects from "./pages/dashboard/developer/DeveloperProjects";
 
 const ScrollToTop = () => {
   const { pathname } = useLocation();
@@ -125,9 +128,9 @@ const App = () => (
 
                     {/* Developer Dashboard Routes */}
                     <Route path="/dashboard/developer" element={<BuilderDashboard />} />
-                    <Route path="/dashboard/developer/lands" element={<BuilderDashboard />} />
-                    <Route path="/dashboard/developer/bids" element={<BuilderDashboard />} />
-                    <Route path="/dashboard/developer/projects" element={<BuilderDashboard />} />
+                    <Route path="/dashboard/developer/lands" element={<DeveloperBrowseLands />} />
+                    <Route path="/dashboard/developer/bids" element={<DeveloperMyBids />} />
+                    <Route path="/dashboard/developer/projects" element={<DeveloperProjects />} />
                     <Route path="/dashboard/developer/notifications" element={<Notifications />} />
                     <Route path="/dashboard/developer/profile" element={<Profile />} />
 

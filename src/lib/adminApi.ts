@@ -187,6 +187,32 @@ export interface AdminAuditRow {
   created_at: string;
 }
 
+export async function createGovtApiToken(body: {
+  name?: string;
+  permissions: Record<string, boolean>;
+}): Promise<{
+  id: string;
+  name: string;
+  permissions: Record<string, boolean>;
+  token: string;
+  created_at: string;
+  message: string;
+}> {
+  const res = await api.post("/admin/govt-api-tokens", body);
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || data.error || "Failed to create token");
+  return data;
+}
+
+export async function listGovtApiTokens(): Promise<{
+  items: { id: string; name: string; permissions: Record<string, boolean>; last_used_at: string | null; created_at: string }[];
+}> {
+  const res = await api.get("/admin/govt-api-tokens");
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || data.error || "Failed to list tokens");
+  return data;
+}
+
 export async function getAdminAuditLogs(params?: {
   action?: string;
   resource_type?: string;
