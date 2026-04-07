@@ -1,12 +1,12 @@
-
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { useAuth } from "@/contexts/AuthContext";
-import { generateLandPieces, getLandData } from "@/data/mockLandData";
+import { generateLandPieces } from "@/data/mockLandData";
+import { getVentureById, ventureDetailToLandData } from "@/lib/venturesApi";
 import { AnimatePresence, motion } from "framer-motion";
-import { AlertTriangle, ArrowLeft, Check, ChevronLeft, ChevronRight, Copy, Download, Facebook, FileText, Link2, Linkedin, MapPin, Maximize2, MessageCircle, Shield, Twitter, X } from "lucide-react";
-import { useMemo, useState } from "react";
-import { Helmet } from 'react-helmet-async';
+import { AlertTriangle, ArrowLeft, Check, ChevronLeft, ChevronRight, Copy, Download, Facebook, FileText, Link2, Linkedin, Loader2, MapPin, Maximize2, MessageCircle, Shield, Twitter, X } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Helmet } from "react-helmet-async";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 
@@ -14,10 +14,24 @@ const AgentLandDetail = () => {
     const navigate = useNavigate();
     const { id } = useParams();
     const { user } = useAuth();
+    const [landData, setLandData] = useState<ReturnType<typeof ventureDetailToLandData> | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
-    // Dynamic Land Data
-    const landData = useMemo(() => getLandData(id), [id]);
-    const landPieces = useMemo(() => generateLandPieces(id), [id]);
+    useEffect(() => {
+        if (!id) return;
+        setLoading(true);
+        setError(null);
+        getVentureById(id)
+            .then((v) => {
+                if (v) setLandData(ventureDetailToLandData(v));
+                else setError("Land not found");
+            })
+            .catch((err) => setError(err instanceof Error ? err.message : "Failed to load land"))
+            .finally(() => setLoading(false));
+    }, [id]);
+
+    const landPieces = useMemo(() => generateLandPieces(id ?? ""), [id]);
     const availablePieces = landPieces.filter(p => p.available).length;
 
     // Grid Interaction State
@@ -41,12 +55,12 @@ const AgentLandDetail = () => {
 
     const nextImage = (e?: React.MouseEvent) => {
         e?.stopPropagation();
-        setCurrentImageIndex((prev) => (prev + 1) % landData.galleryImages.length);
+        if (landData) setCurrentImageIndex((prev) => (prev + 1) % landData.galleryImages.length);
     };
 
     const prevImage = (e?: React.MouseEvent) => {
         e?.stopPropagation();
-        setCurrentImageIndex((prev) => (prev - 1 + landData.galleryImages.length) % landData.galleryImages.length);
+        if (landData) setCurrentImageIndex((prev) => (prev - 1 + landData.galleryImages.length) % landData.galleryImages.length);
     };
 
     // Referral Link Logic
@@ -59,6 +73,7 @@ const AgentLandDetail = () => {
 
     // Native Share Logic (File Share)
     const handleNativeShare = async () => {
+        if (!landData) return;
         const shareData = {
             title: `Invest in ${landData.name} `,
             text: `Check out this premium land in ${landData.location}. Expected ROI: ${landData.expectedROI}.`,
@@ -69,7 +84,8 @@ const AgentLandDetail = () => {
             if (navigator.share) {
                 try {
                     toast.info("Preparing image for share...");
-                    const response = await fetch(landData.images[0]);
+                    const imgUrl = landData.images[0] || landData.galleryImages[0];
+                    const response = await fetch(imgUrl);
                     const blob = await response.blob();
                     const file = new File([blob], "land-preview.jpg", { type: "image/jpeg" });
 
@@ -96,8 +112,10 @@ const AgentLandDetail = () => {
     };
 
     const handleCopyImage = async () => {
+        if (!landData) return;
         try {
-            const response = await fetch(landData.images[0]);
+            const imgUrl = landData.images[0] || landData.galleryImages[0];
+            const response = await fetch(imgUrl);
             const blob = await response.blob();
             await navigator.clipboard.write([
                 new ClipboardItem({
@@ -113,8 +131,7 @@ const AgentLandDetail = () => {
     };
 
     const handleShare = async (platform: string) => {
-        // Just open the link. We rely on the user having copied the image manually via the button.
-
+        if (!landData) return;
         const title = encodeURIComponent(`* Invest in ${landData.name}* `);
         const desc = encodeURIComponent(`Check out this premium land in ${landData.location}. Expected ROI: ${landData.expectedROI}.`);
         const url = encodeURIComponent(referralLink);
@@ -140,6 +157,25 @@ const AgentLandDetail = () => {
         }
     };
 
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center py-24">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+        );
+    }
+
+    if (error || !landData) {
+        return (
+            <div className="space-y-4">
+                <Button variant="ghost" onClick={() => navigate("/dashboard/agent/explore")}>
+                    <ArrowLeft className="w-4 h-4 mr-2" />
+                    Back to Explore
+                </Button>
+                <p className="text-destructive">{error || "Land not found"}</p>
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-6 pb-20">

@@ -1,9 +1,10 @@
 import { Button } from "@/components/ui/button";
 import { useWishlist } from "@/contexts/WishlistContext";
-import { generateLandPieces, getLandData } from "@/data/mockLandData"; // CORRECTED IMPORT
+import { generateLandPieces } from "@/data/mockLandData";
+import { getVentureById, ventureDetailToLandData } from "@/lib/venturesApi";
 import { AnimatePresence, motion } from "framer-motion";
-import { AlertTriangle, ArrowLeft, Check, ChevronLeft, ChevronRight, Download, FileText, MapPin, Maximize2, Shield, TrendingUp, Users, X } from "lucide-react";
-import { useMemo, useState } from "react";
+import { AlertTriangle, ArrowLeft, Check, ChevronLeft, ChevronRight, Download, FileText, Loader2, MapPin, Maximize2, Shield, TrendingUp, Users, X } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 
@@ -21,20 +22,33 @@ interface LandPiece {
 const LandDetail = () => {
   const navigate = useNavigate();
   const { id } = useParams();
+  const [landData, setLandData] = useState<ReturnType<typeof ventureDetailToLandData> | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [selectedPieces, setSelectedPieces] = useState<Set<number>>(new Set());
   const [hoveredPieceId, setHoveredPieceId] = useState<number | null>(null);
   const [acceptExitConditions, setAcceptExitConditions] = useState(false);
   const [acceptPlatformTerms, setAcceptPlatformTerms] = useState(false);
   const [showPieceSelector, setShowPieceSelector] = useState(true);
 
-  // Dynamic Land Data
-  const landData = useMemo(() => getLandData(id), [id]);
+  useEffect(() => {
+    if (!id) return;
+    setLoading(true);
+    setError(null);
+    getVentureById(id)
+      .then((v) => {
+        if (v) setLandData(ventureDetailToLandData(v));
+        else setError("Land not found");
+      })
+      .catch((err) => setError(err instanceof Error ? err.message : "Failed to load land"))
+      .finally(() => setLoading(false));
+  }, [id]);
 
   // EOI Context
   const { addToWishlist, items: wishlistItems } = useWishlist();
 
   // Check if this land is already in wishlist
-  const existingWishlistItem = wishlistItems.find(i => i.landId === landData.id);
+  const existingWishlistItem = landData ? wishlistItems.find((i) => i.landId === landData.id) : undefined;
   const isInterested = !!existingWishlistItem;
 
   // Gallery State
@@ -50,19 +64,18 @@ const LandDetail = () => {
 
   const nextImage = (e?: React.MouseEvent) => {
     e?.stopPropagation();
-    setCurrentImageIndex((prev) => (prev + 1) % landData.galleryImages.length);
+    if (landData) setCurrentImageIndex((prev) => (prev + 1) % landData.galleryImages.length);
   };
 
   const prevImage = (e?: React.MouseEvent) => {
     e?.stopPropagation();
-    setCurrentImageIndex((prev) => (prev - 1 + landData.galleryImages.length) % landData.galleryImages.length);
+    if (landData) setCurrentImageIndex((prev) => (prev - 1 + landData.galleryImages.length) % landData.galleryImages.length);
   };
 
   // Generate land pieces in a grid layout (10x10 grid = 100 pieces)
-  // Use id for seed
-  const landPieces = useMemo(() => generateLandPieces(id), [id]);
-
-  const totalAmount = selectedPieces.size * 25000;
+  const landPieces = useMemo(() => generateLandPieces(id ?? ""), [id]);
+  const pricePerPiece = landData?.tokenPriceNumber ?? 25000;
+  const totalAmount = selectedPieces.size * pricePerPiece;
   const availablePieces = landPieces.filter(p => p.available).length;
   const selectedPiecesCount = selectedPieces.size;
   const hoveredPiece = useMemo(
@@ -86,6 +99,7 @@ const LandDetail = () => {
   };
 
   const handleExpressionOfInterest = () => {
+    if (!landData) return;
     if (selectedPieces.size === 0) {
       toast.error("Please select at least one piece of land");
       return;
@@ -101,8 +115,8 @@ const LandDetail = () => {
       location: landData.location,
       image: landData.images[0],
       selectedPieces: Array.from(selectedPieces),
-      pricePerPiece: 25000,
-      totalAmount: selectedPieces.size * 25000,
+      pricePerPiece,
+      totalAmount: selectedPieces.size * pricePerPiece,
       area: landData.area,
       tokenPrice: landData.tokenPrice,
       expectedROI: landData.expectedROI,
@@ -112,6 +126,26 @@ const LandDetail = () => {
     setAcceptExitConditions(false);
     setAcceptPlatformTerms(false);
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-24">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (error || !landData) {
+    return (
+      <div className="space-y-4">
+        <Button variant="ghost" onClick={() => navigate("/dashboard/user/explore")}>
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Back to Explore
+        </Button>
+        <p className="text-destructive">{error || "Land not found"}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

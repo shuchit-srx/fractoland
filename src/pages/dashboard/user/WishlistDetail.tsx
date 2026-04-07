@@ -1,9 +1,11 @@
 import { Button } from "@/components/ui/button";
 import { useWishlist } from "@/contexts/WishlistContext";
-import { generateLandPieces, getLandData } from "@/data/mockLandData"; // UPDATED IMPORT
+import { generateLandPieces } from "@/data/mockLandData";
+import { createInvestment } from "@/lib/dashboardApi";
+import { getVentureById, ventureDetailToLandData } from "@/lib/venturesApi";
 import { AnimatePresence, motion } from "framer-motion";
-import { AlertCircle, AlertTriangle, ArrowLeft, Check, CheckCircle2, ChevronLeft, ChevronRight, CreditCard, Download, FileText, MapPin, Maximize2, Shield, Users, X } from "lucide-react";
-import { useMemo, useState } from "react";
+import { AlertCircle, AlertTriangle, ArrowLeft, Check, CheckCircle2, ChevronLeft, ChevronRight, CreditCard, Download, FileText, Loader2, MapPin, Maximize2, Shield, Users, X } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 
@@ -12,21 +14,28 @@ const WishlistDetail = () => {
     const navigate = useNavigate();
     const { getItem, checkStatus } = useWishlist();
     const [showPayment, setShowPayment] = useState(false);
+    const [isPaying, setIsPaying] = useState(false);
+    const [land, setLand] = useState<ReturnType<typeof ventureDetailToLandData> | null>(null);
+    const [landLoading, setLandLoading] = useState(false);
+    const [landError, setLandError] = useState<string | null>(null);
 
-    // Get the specific wishlist item using the ID from the URL
     const item = id ? getItem(id) : undefined;
+    const landIdToFetch = item ? item.landId : undefined;
 
-    // Use dynamic helper to get land data, using the saved item's landId if available
-    // note: item.landId stores the LAND ID (e.g. "1"), item.id is the wishlist entry ID
-    const landIdToFetch = item ? item.landId : "1";
-    // Using string "1" from mock data usually corresponds to numeric 1 in the helper logic, 
-    // but our helper parses id. If item.landId is "LND...", we might need to be careful.
-    // Looking at mockLandData: landId is string "LND...", but helper uses numeric ID param.
-    // In LandDetail, we use URL param "id". In Wishlist, we saved "landData.id" (numeric 1).
-    const land = useMemo(() => getLandData(String(landIdToFetch)), [landIdToFetch]);
+    useEffect(() => {
+        if (!landIdToFetch) return;
+        setLandLoading(true);
+        setLandError(null);
+        getVentureById(landIdToFetch)
+            .then((v) => {
+                if (v) setLand(ventureDetailToLandData(v));
+                else setLandError("Land not found");
+            })
+            .catch((err) => setLandError(err instanceof Error ? err.message : "Failed to load land"))
+            .finally(() => setLandLoading(false));
+    }, [landIdToFetch]);
 
-    // Generate pieces based on land ID seed
-    const landPieces = useMemo(() => generateLandPieces(String(landIdToFetch)), [landIdToFetch]);
+    const landPieces = useMemo(() => generateLandPieces(landIdToFetch ?? ""), [landIdToFetch]);
 
     // Gallery State
     const [isGalleryOpen, setIsGalleryOpen] = useState(false);
@@ -43,10 +52,27 @@ const WishlistDetail = () => {
         );
     }
 
+    if (landLoading) {
+        return (
+            <div className="flex items-center justify-center py-24">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+        );
+    }
+
+    if (landError || !land) {
+        return (
+            <div className="flex flex-col items-center justify-center p-10 space-y-4">
+                <p className="text-destructive">{landError || "Land not found"}</p>
+                <Button onClick={() => navigate("/dashboard/user/wishlist")}>Back to Wishlist</Button>
+            </div>
+        );
+    }
+
     const selectedPiecesSet = new Set(item.selectedPieces);
     const selectedPiecesCount = item.selectedPieces.length;
     const totalAmount = item.totalAmount;
-    const hoveredPiece = landPieces.find(p => p.id === hoveredPieceId);
+    const hoveredPiece = landPieces.find((p) => p.id === hoveredPieceId);
 
     // Calculate stats
     const availablePiecesCount = landPieces.filter(p => p.available).length;
@@ -70,12 +96,34 @@ const WishlistDetail = () => {
         setCurrentImageIndex((prev) => (prev - 1 + land.galleryImages.length) % land.galleryImages.length);
     };
 
-    const handlePayment = (method: string) => {
-        toast.success(`Payment initiated via ${method} for ${selectedPiecesCount} piece(s). Redirecting...`);
-        setTimeout(() => {
-            toast.success(`Investment successful! ${selectedPiecesCount} piece(s) added to your portfolio.`);
-            navigate("/dashboard/user/portfolio");
-        }, 2000);
+    const handlePayment = async (method: "wallet" | "gateway") => {
+        if (!land) return;
+        if (selectedPiecesCount <= 0) {
+            toast.error("No selected pieces found.");
+            return;
+        }
+
+        setIsPaying(true);
+        try {
+            const result = await createInvestment({
+                venture_id: land.id,
+                token_count: selectedPiecesCount,
+                payment_method: method,
+            });
+
+            if (result.status === "completed") {
+                toast.success(`Investment successful! ${selectedPiecesCount} piece(s) added to your portfolio.`);
+                navigate("/dashboard/user/portfolio");
+                return;
+            }
+
+            toast.success("Payment initiated. Your investment is pending confirmation.");
+            setShowPayment(false);
+        } catch (err) {
+            toast.error(err instanceof Error ? err.message : "Failed to process payment");
+        } finally {
+            setIsPaying(false);
+        }
     };
 
     return (
@@ -432,7 +480,8 @@ const WishlistDetail = () => {
                                     <p className="text-sm font-medium">Select Payment Method:</p>
                                     <div className="space-y-3">
                                         <button
-                                            onClick={() => handlePayment("UPI")}
+                                            onClick={() => handlePayment("gateway")}
+                                            disabled={isPaying}
                                             className="w-full p-3 bg-secondary/50 rounded-xl flex items-center gap-3 hover:bg-secondary transition-colors text-left"
                                         >
                                             <div className="w-10 h-10 bg-green-500/10 rounded-full flex items-center justify-center flex-none">
@@ -443,7 +492,8 @@ const WishlistDetail = () => {
                                             </div>
                                         </button>
                                         <button
-                                            onClick={() => handlePayment("Card")}
+                                            onClick={() => handlePayment("gateway")}
+                                            disabled={isPaying}
                                             className="w-full p-3 bg-secondary/50 rounded-xl flex items-center gap-3 hover:bg-secondary transition-colors text-left"
                                         >
                                             <div className="w-10 h-10 bg-blue-500/10 rounded-full flex items-center justify-center flex-none">
@@ -454,7 +504,17 @@ const WishlistDetail = () => {
                                             </div>
                                         </button>
                                     </div>
-                                    <Button variant="ghost" className="w-full text-xs" onClick={() => setShowPayment(false)}>Cancel Payment</Button>
+                                    <Button
+                                        variant="outline"
+                                        className="w-full text-xs"
+                                        onClick={() => handlePayment("wallet")}
+                                        disabled={isPaying}
+                                    >
+                                        Pay from Wallet
+                                    </Button>
+                                    <Button variant="ghost" className="w-full text-xs" onClick={() => setShowPayment(false)} disabled={isPaying}>
+                                        {isPaying ? "Processing..." : "Cancel Payment"}
+                                    </Button>
                                 </motion.div>
                             ) : (
                                 <>
