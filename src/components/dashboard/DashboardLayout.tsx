@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/select";
 import { useAuth, UserRole } from "@/contexts/AuthContext";
 import { motion } from "framer-motion";
-import { Bell, Briefcase, ChevronRight, FileText, Heart, Home, Link2, LogOut, MapPin, Menu, Store, Users, Vote, X, HardHat, Building, ListOrdered } from "lucide-react";
+import { Bell, Briefcase, ChevronRight, FileText, Heart, Home, LayoutDashboard, Link2, LogOut, MapPin, Menu, Store, Users, Vote, X, HardHat, Building } from "lucide-react";
 import { ReactNode, useEffect, useRef, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -65,7 +65,7 @@ const navItems: Record<UserRole, NavItem[]> = {
   ],
 
   admin: [
-    { icon: ListOrdered, label: "Resale queue", href: "/dashboard/admin/resale" },
+    { icon: LayoutDashboard, label: "Admin console", href: "/dashboard/admin" },
     { icon: Bell, label: "Notifications", href: "/dashboard/admin/notifications" },
     { icon: Briefcase, label: "Profile", href: "/dashboard/admin/profile" },
   ],

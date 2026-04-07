@@ -82,7 +82,8 @@ export async function getAdminResaleQueue(params?: {
   if (params?.venture_id) search.set("venture_id", params.venture_id);
   if (params?.limit != null) search.set("limit", String(params.limit));
   if (params?.offset != null) search.set("offset", String(params.offset));
-  const res = await api.get(`/resale-requests/admin/queue?${search.toString()}`);
+  const q = search.toString();
+  const res = await api.get(q ? `/admin/resale-requests?${q}` : "/admin/resale-requests");
   const data = await res.json();
   if (!res.ok) throw new Error(data.message || data.error || "Failed to load queue");
   return data;
@@ -92,7 +93,7 @@ export async function adminUpdateResaleRequest(
   id: string,
   body: { status: ResaleStatus; queue_position?: number }
 ): Promise<AdminResaleRow> {
-  const res = await api.patch(`/resale-requests/admin/${id}`, body);
+  const res = await api.patch(`/admin/resale-requests/${id}`, body);
   const data = await res.json();
   if (!res.ok) throw new Error(data.message || data.error || "Failed to update request");
   return data;

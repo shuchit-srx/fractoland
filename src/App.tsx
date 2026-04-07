@@ -9,7 +9,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { HelmetProvider } from "react-helmet-async";
 import { ReferralCapture } from "@/components/ReferralCapture";
-import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router-dom";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
@@ -53,7 +53,7 @@ import DeveloperRegister from "./pages/DeveloperRegister";
 
 import Wishlist from "./pages/dashboard/user/Wishlist";
 import WishlistDetail from "./pages/dashboard/user/WishlistDetail";
-import AdminResaleQueue from "./pages/dashboard/AdminResaleQueue";
+import AdminConsole from "./pages/dashboard/AdminConsole";
 
 const ScrollToTop = () => {
   const { pathname } = useLocation();
@@ -131,10 +131,10 @@ const App = () => (
                     <Route path="/dashboard/developer/notifications" element={<Notifications />} />
                     <Route path="/dashboard/developer/profile" element={<Profile />} />
 
-                    <Route path="/dashboard/admin/resale" element={<AdminResaleQueue />} />
+                    <Route path="/dashboard/admin/resale" element={<Navigate to="/dashboard/admin?tab=resale" replace />} />
                     <Route path="/dashboard/admin/notifications" element={<Notifications />} />
                     <Route path="/dashboard/admin/profile" element={<Profile />} />
-                    <Route path="/dashboard/admin" element={<AdminResaleQueue />} />
+                    <Route path="/dashboard/admin" element={<AdminConsole />} />
                   </Route>
 
                   <Route path="*" element={<NotFound />} />
