@@ -1,115 +1,158 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
+import {
+  createWishlistItem,
+  deleteWishlistItem,
+  formatDate,
+  formatInr,
+  getWishlist,
+  type WishlistApiItem,
+} from "@/lib/dashboardApi";
+import { getAccessToken } from "@/lib/api";
+import React, { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { toast } from "sonner";
 
+const DEFAULT_IMAGE = "https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=400&h=300&fit=crop";
+
 export interface WishlistItem {
-    id: string; // Unique ID for the wishlist item
-    landId: string; // ID of the land from LandData
-    landName: string;
-    location: string;
-    image: string;
-    selectedPieces: number[]; // Array of selected piece IDs
-    pricePerPiece: number;
-    totalAmount: number;
-    status: "pending" | "approved" | "rejected";
-    dateAdded: string;
-    // Snapshot of other details to show in the fresh page without re-fetching if data changes
-    area: string;
-    tokenPrice: string;
-    expectedROI: string;
+  id: string;
+  landId: string;
+  landName: string;
+  location: string;
+  image: string;
+  selectedPieces: number[];
+  pricePerPiece: number;
+  totalAmount: number;
+  status: "pending" | "approved" | "rejected";
+  dateAdded: string;
+  area: string;
+  tokenPrice: string;
+  expectedROI: string;
+}
+
+function mapApiToItem(row: WishlistApiItem): WishlistItem {
+  const v = row.venture;
+  const tokenPrice = v.token_price ?? 0;
+  const status =
+    row.status === "approved" || row.status === "rejected" || row.status === "pending"
+      ? row.status
+      : "pending";
+  const area =
+    v.area_acres != null && Number.isFinite(v.area_acres)
+      ? `${v.area_acres} acres`
+      : "—";
+  return {
+    id: row.id,
+    landId: row.venture_id,
+    landName: v.name || "Venture",
+    location: v.location || "—",
+    image: row.image_url || DEFAULT_IMAGE,
+    selectedPieces: row.selected_piece_ids,
+    pricePerPiece: tokenPrice,
+    totalAmount: row.total_amount,
+    status,
+    dateAdded: formatDate(row.created_at),
+    area,
+    tokenPrice: formatInr(tokenPrice),
+    expectedROI: v.expected_roi_percent != null ? `${v.expected_roi_percent}%` : "—",
+  };
 }
 
 interface WishlistContextType {
-    items: WishlistItem[];
-    addToWishlist: (item: Omit<WishlistItem, "id" | "dateAdded" | "status">) => void;
-    removeFromWishlist: (id: string) => void;
-    checkStatus: (id: string) => void; // Simulates admin approval
-    getItem: (id: string) => WishlistItem | undefined;
+  items: WishlistItem[];
+  loading: boolean;
+  error: string | null;
+  refreshWishlist: () => Promise<void>;
+  addToWishlist: (item: Omit<WishlistItem, "id" | "dateAdded" | "status">) => Promise<void>;
+  removeFromWishlist: (id: string) => Promise<void>;
+  getItem: (id: string) => WishlistItem | undefined;
 }
 
 const WishlistContext = createContext<WishlistContextType | undefined>(undefined);
 
 export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const [items, setItems] = useState<WishlistItem[]>([]);
+  const [items, setItems] = useState<WishlistItem[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-    // Load from local storage on mount
-    useEffect(() => {
-        const stored = localStorage.getItem("fractoland_wishlist");
-        if (stored) {
-            try {
-                setItems(JSON.parse(stored));
-            } catch (e) {
-                console.error("Failed to parse wishlist", e);
-            }
-        }
-    }, []);
+  const refreshWishlist = useCallback(async () => {
+    if (!getAccessToken()) {
+      setItems([]);
+      setError(null);
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    try {
+      const { items: rows } = await getWishlist({ limit: 100 });
+      setItems(rows.map(mapApiToItem));
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Failed to load wishlist";
+      setError(msg);
+      setItems([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-    // Save to local storage whenever items change
-    useEffect(() => {
-        localStorage.setItem("fractoland_wishlist", JSON.stringify(items));
-    }, [items]);
+  useEffect(() => {
+    void refreshWishlist();
+  }, [refreshWishlist]);
 
-    const addToWishlist = (newItem: Omit<WishlistItem, "id" | "dateAdded" | "status">) => {
-        // Check if already exists for this land
-        const existing = items.find((i) => i.landId === newItem.landId);
-        if (existing) {
-            // For simplicity in this demo, we'll replace the existing one or just notify
-            // Let's update it to the new selection
-            setItems((prev) =>
-                prev.map((i) =>
-                    i.landId === newItem.landId
-                        ? {
-                            ...i,
-                            ...newItem,
-                            selectedPieces: newItem.selectedPieces,
-                            totalAmount: newItem.totalAmount,
-                            dateAdded: new Date().toLocaleDateString(),
-                            status: "pending", // Reset status on update
-                        }
-                        : i
-                )
-            );
-            toast.success("Wishlist updated with new selection!");
-        } else {
-            const item: WishlistItem = {
-                ...newItem,
-                id: crypto.randomUUID(),
-                status: "pending",
-                dateAdded: new Date().toLocaleDateString(),
-            };
-            setItems((prev) => [item, ...prev]);
-            toast.success("Added to Wishlist successfully!");
-        }
-    };
+  const addToWishlist = async (newItem: Omit<WishlistItem, "id" | "dateAdded" | "status">) => {
+    if (!getAccessToken()) {
+      toast.error("Please sign in to save your wishlist.");
+      return;
+    }
+    try {
+      await createWishlistItem({
+        venture_id: newItem.landId,
+        selected_piece_ids: newItem.selectedPieces,
+        total_amount: newItem.totalAmount,
+      });
+      await refreshWishlist();
+      toast.success("Saved to your wishlist.");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not save wishlist");
+      throw e;
+    }
+  };
 
-    const removeFromWishlist = (id: string) => {
-        setItems((prev) => prev.filter((i) => i.id !== id));
-        toast.success("Removed from wishlist");
-    };
+  const removeFromWishlist = async (id: string) => {
+    if (!getAccessToken()) {
+      toast.error("Please sign in to manage your wishlist.");
+      return;
+    }
+    try {
+      await deleteWishlistItem(id);
+      await refreshWishlist();
+      toast.success("Removed from wishlist");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not remove item");
+    }
+  };
 
-    const checkStatus = (id: string) => {
-        // Simulate Admin Approval after a toggle/check
-        setItems((prev) =>
-            prev.map((i) =>
-                i.id === id
-                    ? { ...i, status: i.status === "pending" ? "approved" : "pending" }
-                    : i
-            )
-        );
-    };
+  const getItem = (id: string) => items.find((i) => i.id === id);
 
-    const getItem = (id: string) => items.find((i) => i.id === id);
-
-    return (
-        <WishlistContext.Provider value={{ items, addToWishlist, removeFromWishlist, checkStatus, getItem }}>
-            {children}
-        </WishlistContext.Provider>
-    );
+  return (
+    <WishlistContext.Provider
+      value={{
+        items,
+        loading,
+        error,
+        refreshWishlist,
+        addToWishlist,
+        removeFromWishlist,
+        getItem,
+      }}
+    >
+      {children}
+    </WishlistContext.Provider>
+  );
 };
 
 export const useWishlist = () => {
-    const context = useContext(WishlistContext);
-    if (context === undefined) {
-        throw new Error("useWishlist must be used within a WishlistProvider");
-    }
-    return context;
+  const context = useContext(WishlistContext);
+  if (context === undefined) {
+    throw new Error("useWishlist must be used within a WishlistProvider");
+  }
+  return context;
 };

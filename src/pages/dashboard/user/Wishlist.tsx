@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
-import { Clock, MapPin, Trash2 } from "lucide-react";
+import { Clock, Loader2, MapPin, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 
@@ -9,10 +9,10 @@ import { useWishlist } from "@/contexts/WishlistContext";
 
 const Wishlist = () => {
     const navigate = useNavigate();
-    const { items, removeFromWishlist } = useWishlist();
+    const { items, removeFromWishlist, loading, error, refreshWishlist } = useWishlist();
 
     const removeItem = (id: string) => {
-        removeFromWishlist(id);
+        void removeFromWishlist(id);
     };
 
     const getStatusColor = (status: string) => {
@@ -46,8 +46,21 @@ const Wishlist = () => {
                 </p>
             </div>
 
+            {error && (
+                <div className="rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive flex flex-wrap items-center gap-2">
+                    <span>{error}</span>
+                    <Button variant="outline" size="sm" onClick={() => void refreshWishlist()}>
+                        Retry
+                    </Button>
+                </div>
+            )}
+
             <div className="grid gap-4">
-                {items.length === 0 ? (
+                {loading ? (
+                    <div className="flex justify-center py-16">
+                        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                    </div>
+                ) : items.length === 0 ? (
                     <div className="text-center py-12 bg-card rounded-2xl border border-border">
                         <p className="text-muted-foreground">Your wishlist is empty.</p>
                         <Button

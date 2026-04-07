@@ -12,12 +12,15 @@ import { toast } from "sonner";
 const WishlistDetail = () => {
     const { id } = useParams();
     const navigate = useNavigate();
-    const { getItem, checkStatus } = useWishlist();
+    const { getItem, loading: wishlistLoading } = useWishlist();
     const [showPayment, setShowPayment] = useState(false);
     const [isPaying, setIsPaying] = useState(false);
     const [land, setLand] = useState<ReturnType<typeof ventureDetailToLandData> | null>(null);
     const [landLoading, setLandLoading] = useState(false);
     const [landError, setLandError] = useState<string | null>(null);
+    const [isGalleryOpen, setIsGalleryOpen] = useState(false);
+    const [currentImageIndex, setCurrentImageIndex] = useState(0);
+    const [hoveredPieceId, setHoveredPieceId] = useState<number | null>(null);
 
     const item = id ? getItem(id) : undefined;
     const landIdToFetch = item ? item.landId : undefined;
@@ -37,11 +40,13 @@ const WishlistDetail = () => {
 
     const landPieces = useMemo(() => generateLandPieces(landIdToFetch ?? ""), [landIdToFetch]);
 
-    // Gallery State
-    const [isGalleryOpen, setIsGalleryOpen] = useState(false);
-    const [currentImageIndex, setCurrentImageIndex] = useState(0);
-
-    const [hoveredPieceId, setHoveredPieceId] = useState<number | null>(null);
+    if (wishlistLoading && id && !item) {
+        return (
+            <div className="flex items-center justify-center py-24">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+        );
+    }
 
     if (!item) {
         return (
@@ -147,10 +152,6 @@ const WishlistDetail = () => {
                 </Button>
 
                 <div className="flex items-center gap-4">
-                    {/* Admin Simulation Toggle */}
-                    <Button variant="outline" size="sm" onClick={() => checkStatus(item.id)} className="text-xs">
-                        {item.status === 'approved' ? 'Simulate Unapprove' : 'Simulate Admin Approve'}
-                    </Button>
                     <div className={`px-4 py-1.5 rounded-full text-sm font-medium border flex items-center gap-2 ${item.status === "approved"
                         ? "bg-green-500/10 text-green-600 border-green-500/20"
                         : item.status === "rejected"

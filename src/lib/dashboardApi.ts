@@ -182,6 +182,72 @@ export async function getActivePolls(params?: { limit?: number; offset?: number 
   return data;
 }
 
+/** GET /wishlist */
+export interface WishlistVentureSummary {
+  name: string | null;
+  location: string;
+  area_acres: number | null;
+  expected_roi_percent: number | null;
+  token_price: number | null;
+}
+
+export interface WishlistApiItem {
+  id: string;
+  venture_id: string;
+  selected_piece_ids: number[];
+  total_amount: number;
+  status: "pending" | "approved" | "rejected";
+  created_at: string;
+  updated_at: string;
+  venture: WishlistVentureSummary;
+  image_url: string | null;
+}
+
+export interface WishlistListResponse {
+  items: WishlistApiItem[];
+  total: number;
+}
+
+export async function getWishlist(params?: { limit?: number; offset?: number }): Promise<WishlistListResponse> {
+  const search = new URLSearchParams();
+  if (params?.limit != null) search.set("limit", String(params.limit));
+  if (params?.offset != null) search.set("offset", String(params.offset));
+  const q = search.toString();
+  const path = q ? `/wishlist?${q}` : "/wishlist";
+  const res = await api.get(path);
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || data.error || "Failed to load wishlist");
+  return data;
+}
+
+/** POST /wishlist */
+export async function createWishlistItem(payload: {
+  venture_id: string;
+  selected_piece_ids: number[];
+  total_amount: number;
+}): Promise<{
+  id: string;
+  venture_id: string;
+  selected_piece_ids: number[];
+  total_amount: number;
+  status: string;
+  created_at: string;
+  updated_at: string;
+}> {
+  const res = await api.post("/wishlist", payload);
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || data.error || "Failed to save wishlist");
+  return data;
+}
+
+/** DELETE /wishlist/:id */
+export async function deleteWishlistItem(id: string): Promise<{ success: boolean }> {
+  const res = await api.delete(`/wishlist/${id}`);
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || data.error || "Failed to remove wishlist item");
+  return data;
+}
+
 /** Format INR for display */
 export function formatInr(value: number): string {
   return new Intl.NumberFormat("en-IN", {

@@ -82,4 +82,6 @@ export const api = {
       method: "PATCH",
       body: body !== undefined ? JSON.stringify(body) : undefined,
     }),
+  delete: (path: string, options?: RequestInit) =>
+    authFetch(path, { ...options, method: "DELETE" }),
 };

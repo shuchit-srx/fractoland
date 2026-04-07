@@ -30,6 +30,7 @@ const LandDetail = () => {
   const [acceptExitConditions, setAcceptExitConditions] = useState(false);
   const [acceptPlatformTerms, setAcceptPlatformTerms] = useState(false);
   const [showPieceSelector, setShowPieceSelector] = useState(true);
+  const [savingWishlist, setSavingWishlist] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -98,7 +99,7 @@ const LandDetail = () => {
     });
   };
 
-  const handleExpressionOfInterest = () => {
+  const handleExpressionOfInterest = async () => {
     if (!landData) return;
     if (selectedPieces.size === 0) {
       toast.error("Please select at least one piece of land");
@@ -109,22 +110,29 @@ const LandDetail = () => {
       return;
     }
 
-    addToWishlist({
-      landId: landData.id,
-      landName: landData.name,
-      location: landData.location,
-      image: landData.images[0],
-      selectedPieces: Array.from(selectedPieces),
-      pricePerPiece,
-      totalAmount: selectedPieces.size * pricePerPiece,
-      area: landData.area,
-      tokenPrice: landData.tokenPrice,
-      expectedROI: landData.expectedROI,
-    });
+    setSavingWishlist(true);
+    try {
+      await addToWishlist({
+        landId: landData.id,
+        landName: landData.name,
+        location: landData.location,
+        image: landData.images[0],
+        selectedPieces: Array.from(selectedPieces),
+        pricePerPiece,
+        totalAmount: selectedPieces.size * pricePerPiece,
+        area: landData.area,
+        tokenPrice: landData.tokenPrice,
+        expectedROI: landData.expectedROI,
+      });
 
-    setSelectedPieces(new Set());
-    setAcceptExitConditions(false);
-    setAcceptPlatformTerms(false);
+      setSelectedPieces(new Set());
+      setAcceptExitConditions(false);
+      setAcceptPlatformTerms(false);
+    } catch {
+      /* toast handled in context */
+    } finally {
+      setSavingWishlist(false);
+    }
   };
 
   if (loading) {
@@ -643,10 +651,19 @@ const LandDetail = () => {
               <Button
                 className="w-full"
                 size="lg"
-                onClick={handleExpressionOfInterest}
-                disabled={selectedPieces.size === 0 || !acceptExitConditions || !acceptPlatformTerms}
+                onClick={() => void handleExpressionOfInterest()}
+                disabled={
+                  savingWishlist ||
+                  selectedPieces.size === 0 ||
+                  !acceptExitConditions ||
+                  !acceptPlatformTerms
+                }
               >
-                <TrendingUp className="w-4 h-4 mr-2" />
+                {savingWishlist ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <TrendingUp className="w-4 h-4 mr-2" />
+                )}
                 Expression of Interest
               </Button>
             )}
