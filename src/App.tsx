@@ -52,6 +52,7 @@ import DeveloperRegister from "./pages/DeveloperRegister";
 
 import Wishlist from "./pages/dashboard/user/Wishlist";
 import WishlistDetail from "./pages/dashboard/user/WishlistDetail";
+import AdminResaleQueue from "./pages/dashboard/AdminResaleQueue";
 
 const ScrollToTop = () => {
   const { pathname } = useLocation();
@@ -127,6 +128,11 @@ const App = () => (
                     <Route path="/dashboard/developer/projects" element={<BuilderDashboard />} />
                     <Route path="/dashboard/developer/notifications" element={<Notifications />} />
                     <Route path="/dashboard/developer/profile" element={<Profile />} />
+
+                    <Route path="/dashboard/admin/resale" element={<AdminResaleQueue />} />
+                    <Route path="/dashboard/admin/notifications" element={<Notifications />} />
+                    <Route path="/dashboard/admin/profile" element={<Profile />} />
+                    <Route path="/dashboard/admin" element={<AdminResaleQueue />} />
                   </Route>
 
                   <Route path="*" element={<NotFound />} />

@@ -1,9 +1,26 @@
 import { Button } from "@/components/ui/button";
-import { formatDate, formatInr, getInvestments, getInvestmentStats, type InvestmentItem } from "@/lib/dashboardApi";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { formatInr, getInvestments, getInvestmentStats, type InvestmentItem } from "@/lib/dashboardApi";
+import {
+  cancelResaleRequest,
+  createResaleRequest,
+  getMyResaleRequests,
+  getResaleAvailability,
+  type ResaleRequestItem,
+} from "@/lib/resaleApi";
 import { motion } from "framer-motion";
-import { ArrowUpRight, Download, Filter, Loader2, MapPin, TrendingUp } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { ArrowUpRight, Download, Filter, Loader2, MapPin, Recycle, TrendingUp } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import {
   Area,
   AreaChart,
@@ -26,19 +43,36 @@ const Portfolio = () => {
     tokens_owned: number;
   } | null>(null);
   const [investments, setInvestments] = useState<InvestmentItem[]>([]);
+  const [resales, setResales] = useState<ResaleRequestItem[]>([]);
+  const [resaleDialog, setResaleDialog] = useState<InvestmentItem | null>(null);
+  const [availability, setAvailability] = useState<{ available_tokens: number } | null>(null);
+  const [resaleTokens, setResaleTokens] = useState("1");
+  const [resaleAsk, setResaleAsk] = useState("");
+  const [resaleSubmitting, setResaleSubmitting] = useState(false);
+
+  const loadResales = useCallback(async () => {
+    try {
+      const r = await getMyResaleRequests({ limit: 50 });
+      setResales(r.items);
+    } catch {
+      setResales([]);
+    }
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
     const load = async () => {
       setLoading(true);
       try {
-        const [s, inv] = await Promise.all([
+        const [s, inv, resaleRes] = await Promise.all([
           getInvestmentStats(),
           getInvestments({ limit: 100 }),
+          getMyResaleRequests({ limit: 50 }).catch(() => ({ items: [] as ResaleRequestItem[], total: 0 })),
         ]);
         if (cancelled) return;
         setStats(s);
         setInvestments(inv.items);
+        setResales(resaleRes.items);
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -48,6 +82,60 @@ const Portfolio = () => {
       cancelled = true;
     };
   }, []);
+
+  const openResaleDialog = async (inv: InvestmentItem) => {
+    if (inv.status !== "completed") return;
+    setResaleDialog(inv);
+    setResaleTokens(String(Math.min(inv.token_count, 1)));
+    setResaleAsk("");
+    try {
+      const a = await getResaleAvailability(inv.venture_id);
+      setAvailability(a);
+      setResaleTokens(String(Math.min(inv.token_count, a.available_tokens) || 1));
+    } catch (e) {
+      setAvailability(null);
+      toast.error(e instanceof Error ? e.message : "Could not load resale availability");
+    }
+  };
+
+  const submitResale = async () => {
+    if (!resaleDialog) return;
+    const n = Number.parseInt(resaleTokens, 10);
+    if (!Number.isFinite(n) || n < 1) {
+      toast.error("Enter a valid token count");
+      return;
+    }
+    const ask = resaleAsk.trim() ? Number(resaleAsk) : null;
+    if (ask != null && (!Number.isFinite(ask) || ask <= 0)) {
+      toast.error("Ask amount must be positive");
+      return;
+    }
+    setResaleSubmitting(true);
+    try {
+      await createResaleRequest({
+        venture_id: resaleDialog.venture_id,
+        token_count: n,
+        requested_amount: ask,
+      });
+      toast.success("Resale request submitted");
+      setResaleDialog(null);
+      await loadResales();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Request failed");
+    } finally {
+      setResaleSubmitting(false);
+    }
+  };
+
+  const handleCancelResale = async (id: string) => {
+    try {
+      await cancelResaleRequest(id);
+      toast.success("Request cancelled");
+      await loadResales();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Cancel failed");
+    }
+  };
 
   const portfolioHistory = useMemo(() => {
     if (!investments.length) return [];
@@ -163,6 +251,87 @@ const Portfolio = () => {
         </div>
       </div>
 
+      <div className="bg-card rounded-2xl border border-border p-6">
+        <h2 className="text-lg font-semibold text-foreground mb-4">Token resale requests</h2>
+        {resales.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No active resale requests. Use “Resell tokens” on a completed investment.</p>
+        ) : (
+          <div className="space-y-2 text-sm">
+            {resales.map((r) => (
+              <div
+                key={r.id}
+                className="flex flex-wrap items-center justify-between gap-2 p-3 rounded-xl bg-secondary/30 border border-border/60"
+              >
+                <div>
+                  <p className="font-medium text-foreground">{r.venture_name || r.venture_id}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {r.token_count} tokens · {r.status}
+                    {r.queue_position != null ? ` · queue #${r.queue_position}` : ""}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  {r.requested_amount != null ? (
+                    <span className="text-xs text-muted-foreground">Ask {formatInr(r.requested_amount)}</span>
+                  ) : null}
+                  {["pending", "listed"].includes(r.status) ? (
+                    <Button variant="outline" size="sm" type="button" onClick={() => handleCancelResale(r.id)}>
+                      Cancel
+                    </Button>
+                  ) : null}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <Dialog open={!!resaleDialog} onOpenChange={(o) => !o && setResaleDialog(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Request token resale</DialogTitle>
+          </DialogHeader>
+          {resaleDialog ? (
+            <div className="space-y-4 py-2">
+              <p className="text-sm text-muted-foreground">{resaleDialog.venture_name}</p>
+              <p className="text-xs text-muted-foreground">
+                Available to list (after other open requests):{" "}
+                <span className="font-medium text-foreground">{availability?.available_tokens ?? "—"}</span> tokens
+              </p>
+              <div className="space-y-2">
+                <Label htmlFor="rt">Tokens to resell</Label>
+                <Input
+                  id="rt"
+                  type="number"
+                  min={1}
+                  max={availability?.available_tokens ?? undefined}
+                  value={resaleTokens}
+                  onChange={(e) => setResaleTokens(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="ask">Target amount (INR, optional)</Label>
+                <Input
+                  id="ask"
+                  type="number"
+                  min={1}
+                  placeholder="e.g. 500000"
+                  value={resaleAsk}
+                  onChange={(e) => setResaleAsk(e.target.value)}
+                />
+              </div>
+            </div>
+          ) : null}
+          <DialogFooter>
+            <Button variant="outline" type="button" onClick={() => setResaleDialog(null)}>
+              Close
+            </Button>
+            <Button type="button" disabled={resaleSubmitting} onClick={submitResale}>
+              {resaleSubmitting ? "Submitting…" : "Submit request"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Investments List */}
       <div className="bg-card rounded-2xl border border-border p-6">
         <div className="flex items-center justify-between mb-6">
@@ -240,6 +409,20 @@ const Portfolio = () => {
                   <p className="text-xs text-muted-foreground">Tokens</p>
                     <p className="font-semibold text-foreground">{investment.token_count}</p>
                 </div>
+                {investment.status === "completed" ? (
+                  <div className="flex items-center md:self-center" onClick={(e) => e.stopPropagation()}>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      className="gap-1 rounded-full text-xs"
+                      type="button"
+                      onClick={() => openResaleDialog(investment)}
+                    >
+                      <Recycle className="w-3 h-3" />
+                      Resell tokens
+                    </Button>
+                  </div>
+                ) : null}
               </div>
             </motion.div>
           ))}

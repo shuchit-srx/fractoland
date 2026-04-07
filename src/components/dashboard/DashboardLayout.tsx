@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/select";
 import { useAuth, UserRole } from "@/contexts/AuthContext";
 import { motion } from "framer-motion";
-import { Bell, Briefcase, ChevronRight, FileText, Heart, Home, Link2, LogOut, MapPin, Menu, Users, Vote, X, HardHat, Building } from "lucide-react";
+import { Bell, Briefcase, ChevronRight, FileText, Heart, Home, Link2, LogOut, MapPin, Menu, Users, Vote, X, HardHat, Building, ListOrdered } from "lucide-react";
 import { ReactNode, useEffect, useRef, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -61,7 +61,13 @@ const navItems: Record<UserRole, NavItem[]> = {
     { icon: Building, label: "Projects", href: "/dashboard/developer/projects" },
     { icon: Bell, label: "Notifications", href: "/dashboard/developer/notifications" },
     { icon: Briefcase, label: "Profile", href: "/dashboard/developer/profile" },
-  ]
+  ],
+
+  admin: [
+    { icon: ListOrdered, label: "Resale queue", href: "/dashboard/admin/resale" },
+    { icon: Bell, label: "Notifications", href: "/dashboard/admin/notifications" },
+    { icon: Briefcase, label: "Profile", href: "/dashboard/admin/profile" },
+  ],
 };
 
 const roleLabels: Record<UserRole, string> = {
@@ -69,6 +75,7 @@ const roleLabels: Record<UserRole, string> = {
   agent: "Real Estate Consultant",
   owner: "Property Owner",
   developer: "Real Estate Developer",
+  admin: "Administrator",
 };
 
 interface DashboardLayoutProps {
@@ -196,7 +203,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
           <div className="p-4 bg-secondary/50 rounded-xl">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
-                <span className="text-primary font-bold text-lg">{currentUser.name[0]}</span>
+                <span className="text-primary font-bold text-lg">{(currentUser.name && currentUser.name[0]) || "?"}</span>
               </div>
               <div className="flex-1 min-w-0">
                 <p className="font-semibold text-foreground text-sm truncate">{currentUser.name}</p>

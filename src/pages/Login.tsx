@@ -143,10 +143,9 @@ const Login = () => {
     }
     setIsLoading(true);
     try {
-      await verifyOtpAndLogin(phone, otp, countryCode);
+      const u = await verifyOtpAndLogin(phone, otp, countryCode);
       toast.success("Login successful!");
-      const dashboardRole = role === "user" ? "user" : role;
-      navigate(`/dashboard/${dashboardRole}`);
+      navigate(`/dashboard/${u.role}`);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Authentication failed.");
     } finally {
