@@ -252,7 +252,12 @@ const Portfolio = () => {
       </div>
 
       <div className="bg-card rounded-2xl border border-border p-6">
-        <h2 className="text-lg font-semibold text-foreground mb-4">Token resale requests</h2>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+          <h2 className="text-lg font-semibold text-foreground">Token resale requests</h2>
+          <Button variant="outline" size="sm" type="button" onClick={() => navigate("/dashboard/user/resale-marketplace")}>
+            Buy on resale marketplace
+          </Button>
+        </div>
         {resales.length === 0 ? (
           <p className="text-sm text-muted-foreground">No active resale requests. Use “Resell tokens” on a completed investment.</p>
         ) : (

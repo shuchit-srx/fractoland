@@ -43,9 +43,14 @@ const ExploreLands = () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-foreground">Explore Lands</h1>
-        <p className="text-muted-foreground mt-1">Discover verified land parcels and invest in fractions</p>
+      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">Explore Lands</h1>
+          <p className="text-muted-foreground mt-1">Discover verified land parcels and invest in fractions</p>
+        </div>
+        <Button variant="outline" size="sm" type="button" onClick={() => navigate("/dashboard/user/resale-marketplace")}>
+          Browse resale marketplace
+        </Button>
       </div>
 
       <div className="flex flex-col md:flex-row gap-4">

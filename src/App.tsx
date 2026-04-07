@@ -21,6 +21,7 @@ import ExploreLands from "./pages/dashboard/user/ExploreLands";
 import LandDetail from "./pages/dashboard/user/LandDetail";
 import Notifications from "./pages/dashboard/user/Notifications";
 import Portfolio from "./pages/dashboard/user/Portfolio";
+import MarketplaceResale from "./pages/dashboard/user/MarketplaceResale";
 import Voting from "./pages/dashboard/user/Voting";
 import Wallet from "./pages/dashboard/user/Wallet";
 
@@ -93,6 +94,7 @@ const App = () => (
                     <Route path="/dashboard/user/explore" element={<ExploreLands />} />
                     <Route path="/dashboard/user/land/:id" element={<LandDetail />} />
                     <Route path="/dashboard/user/portfolio" element={<Portfolio />} />
+                    <Route path="/dashboard/user/resale-marketplace" element={<MarketplaceResale />} />
                     <Route path="/dashboard/user/wishlist" element={<Wishlist />} />
                     <Route path="/dashboard/user/wishlist/:id" element={<WishlistDetail />} />
                     <Route path="/dashboard/user/notifications" element={<Notifications />} />

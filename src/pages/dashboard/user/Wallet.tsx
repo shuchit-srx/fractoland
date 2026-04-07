@@ -42,8 +42,8 @@ const Wallet = () => {
     for (const tx of transactions) {
       if (tx.status === "pending") pending += tx.amount;
       if (tx.status !== "completed") continue;
-      if (tx.type === "add_funds" || tx.type === "royalty" || tx.type === "refund") deposited += tx.amount;
-      if (tx.type === "investment") invested += tx.amount;
+      if (tx.type === "add_funds" || tx.type === "royalty" || tx.type === "refund" || tx.type === "resale_payout") deposited += tx.amount;
+      if (tx.type === "investment" || tx.type === "resale_purchase") invested += tx.amount;
       if (tx.type === "withdrawal") withdrawn += tx.amount;
     }
     return { deposited, invested, withdrawn, pending };
@@ -218,9 +218,9 @@ const Wallet = () => {
               className="flex items-center justify-between p-4 bg-secondary/30 rounded-xl hover:bg-secondary/50 transition-colors"
             >
               <div className="flex items-center gap-4">
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${tx.type === "add_funds" || tx.type === "royalty" || tx.type === "refund" ? "bg-green-500/10" : "bg-red-500/10"
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${tx.type === "add_funds" || tx.type === "royalty" || tx.type === "refund" || tx.type === "resale_payout" ? "bg-green-500/10" : "bg-red-500/10"
                   }`}>
-                  {tx.type === "add_funds" || tx.type === "royalty" || tx.type === "refund" ? (
+                  {tx.type === "add_funds" || tx.type === "royalty" || tx.type === "refund" || tx.type === "resale_payout" ? (
                     <ArrowDownLeft className="w-5 h-5 text-green-600" />
                   ) : (
                     <ArrowUpRight className="w-5 h-5 text-red-600" />
@@ -232,8 +232,8 @@ const Wallet = () => {
                 </div>
               </div>
               <div className="text-right">
-                <p className={`font-semibold ${tx.type === "add_funds" || tx.type === "royalty" || tx.type === "refund" ? "text-green-600" : "text-red-600"}`}>
-                  {(tx.type === "add_funds" || tx.type === "royalty" || tx.type === "refund" ? "+" : "-") + formatInr(tx.amount)}
+                <p className={`font-semibold ${tx.type === "add_funds" || tx.type === "royalty" || tx.type === "refund" || tx.type === "resale_payout" ? "text-green-600" : "text-red-600"}`}>
+                  {(tx.type === "add_funds" || tx.type === "royalty" || tx.type === "refund" || tx.type === "resale_payout" ? "+" : "-") + formatInr(tx.amount)}
                 </p>
                 <p className="text-xs text-muted-foreground capitalize">{tx.status}</p>
               </div>

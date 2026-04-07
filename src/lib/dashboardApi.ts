@@ -95,7 +95,7 @@ export async function createInvestment(payload: CreateInvestmentPayload): Promis
 /** GET /payments/me */
 export interface PaymentItem {
   id: string;
-  type: "add_funds" | "investment" | "withdrawal" | "royalty" | "refund";
+  type: "add_funds" | "investment" | "withdrawal" | "royalty" | "refund" | "resale_purchase" | "resale_payout";
   amount: number;
   currency: string;
   status: "pending" | "completed" | "failed" | "refunded";

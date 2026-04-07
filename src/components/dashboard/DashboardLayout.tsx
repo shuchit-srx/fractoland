@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/select";
 import { useAuth, UserRole } from "@/contexts/AuthContext";
 import { motion } from "framer-motion";
-import { Bell, Briefcase, ChevronRight, FileText, Heart, Home, Link2, LogOut, MapPin, Menu, Users, Vote, X, HardHat, Building, ListOrdered } from "lucide-react";
+import { Bell, Briefcase, ChevronRight, FileText, Heart, Home, Link2, LogOut, MapPin, Menu, Store, Users, Vote, X, HardHat, Building, ListOrdered } from "lucide-react";
 import { ReactNode, useEffect, useRef, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -32,6 +32,7 @@ const navItems: Record<UserRole, NavItem[]> = {
     { icon: Home, label: "Dashboard", href: "/dashboard/user" },
     { icon: MapPin, label: "Explore Lands", href: "/dashboard/user/explore" },
     { icon: Briefcase, label: "Portfolio", href: "/dashboard/user/portfolio" },
+    { icon: Store, label: "Resale marketplace", href: "/dashboard/user/resale-marketplace" },
     { icon: Vote, label: "Voting", href: "/dashboard/user/voting" },
     { icon: Heart, label: "Interested Lands", href: "/dashboard/user/wishlist" },
     { icon: Bell, label: "Notifications", href: "/dashboard/user/notifications" },

@@ -97,3 +97,49 @@ export async function adminUpdateResaleRequest(
   if (!res.ok) throw new Error(data.message || data.error || "Failed to update request");
   return data;
 }
+
+/** Public marketplace (listed resales only). Works without auth. */
+export interface MarketplaceListing {
+  id: string;
+  venture_id: string;
+  token_count: number;
+  requested_amount: number | null;
+  queue_position: number | null;
+  created_at: string;
+  venture_name: string | null;
+  location: string;
+  image_url: string | null;
+  reference_token_price: number | null;
+}
+
+export async function getMarketplaceListings(params?: {
+  venture_id?: string;
+  limit?: number;
+  offset?: number;
+}): Promise<{ items: MarketplaceListing[]; total: number }> {
+  const search = new URLSearchParams();
+  if (params?.venture_id) search.set("venture_id", params.venture_id);
+  if (params?.limit != null) search.set("limit", String(params.limit));
+  if (params?.offset != null) search.set("offset", String(params.offset));
+  const q = search.toString();
+  const res = await api.get(q ? `/resale-requests/marketplace?${q}` : "/resale-requests/marketplace");
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || data.error || "Failed to load marketplace");
+  return data;
+}
+
+export async function purchaseResaleListing(
+  listingId: string,
+  body: { payment_method: "wallet" | "gateway"; amount?: number }
+): Promise<{
+  status: string;
+  payment_id: string;
+  sale_amount: number;
+  resale_id: string;
+  payment_gateway_order_id?: string | null;
+}> {
+  const res = await api.post(`/resale-requests/${listingId}/purchase`, body);
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || data.error || "Purchase failed");
+  return data;
+}
