@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { useWishlist } from "@/contexts/WishlistContext";
 import { generateLandPieces } from "@/data/mockLandData";
-import { createInvestment } from "@/lib/dashboardApi";
+import { createInvestment, paymentCallback } from "@/lib/dashboardApi";
 import { getVentureById, ventureDetailToLandData } from "@/lib/venturesApi";
 import { AnimatePresence, motion } from "framer-motion";
 import { AlertCircle, AlertTriangle, ArrowLeft, Check, CheckCircle2, ChevronLeft, ChevronRight, CreditCard, Download, FileText, Loader2, MapPin, Maximize2, Shield, Users, X } from "lucide-react";
@@ -112,6 +112,17 @@ const WishlistDetail = () => {
             });
 
             if (result.status === "completed") {
+                toast.success(`Investment successful! ${selectedPiecesCount} piece(s) added to your portfolio.`);
+                navigate("/dashboard/user/portfolio");
+                return;
+            }
+
+            if (method === "gateway" && result.payment_gateway_order_id) {
+                await paymentCallback({
+                    gateway_order_id: result.payment_gateway_order_id,
+                    gateway_payment_id: `pay_${Date.now()}`,
+                    status: "completed",
+                });
                 toast.success(`Investment successful! ${selectedPiecesCount} piece(s) added to your portfolio.`);
                 navigate("/dashboard/user/portfolio");
                 return;

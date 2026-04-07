@@ -80,12 +80,75 @@ export interface CreateInvestmentResponse {
   status: "pending" | "completed" | "failed" | "refunded";
   payment_id: string | null;
   tx_hash: string | null;
+  payment_gateway_order_id?: string | null;
 }
 
 export async function createInvestment(payload: CreateInvestmentPayload): Promise<CreateInvestmentResponse> {
   const res = await api.post("/investments", payload);
   const data = await res.json();
   if (!res.ok) throw new Error(data.message || data.error || "Failed to create investment");
+  return data;
+}
+
+/** GET /payments/me */
+export interface PaymentItem {
+  id: string;
+  type: "add_funds" | "investment" | "withdrawal" | "royalty" | "refund";
+  amount: number;
+  currency: string;
+  status: "pending" | "completed" | "failed" | "refunded";
+  description?: string;
+  created_at: string;
+}
+
+export interface PaymentsListResponse {
+  items: PaymentItem[];
+  total: number;
+}
+
+export async function getPayments(params?: { type?: string; limit?: number; offset?: number }): Promise<PaymentsListResponse> {
+  const search = new URLSearchParams();
+  if (params?.type) search.set("type", params.type);
+  if (params?.limit != null) search.set("limit", String(params.limit));
+  if (params?.offset != null) search.set("offset", String(params.offset));
+  const q = search.toString();
+  const path = q ? `/payments/me?${q}` : "/payments/me";
+  const res = await api.get(path);
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || data.error || "Failed to load payments");
+  return data;
+}
+
+/** POST /payments/add-funds */
+export async function addFundsInit(payload: { amount: number; currency?: string; gateway?: string }): Promise<{
+  order_id: string;
+  amount: number;
+  gateway_order_id: string;
+  redirect_url: string | null;
+}> {
+  const res = await api.post("/payments/add-funds", payload);
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || data.error || "Failed to initialize add-funds");
+  return data;
+}
+
+/** POST /payments/add-funds/callback */
+export async function paymentCallback(payload: {
+  gateway_order_id: string;
+  gateway_payment_id: string;
+  status: "pending" | "completed" | "failed" | "refunded";
+}): Promise<{ success: boolean; payment_id?: string; status?: string; already_processed?: boolean }> {
+  const res = await api.post("/payments/add-funds/callback", payload);
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || data.error || "Failed to process payment callback");
+  return data;
+}
+
+/** POST /payments/withdraw */
+export async function withdrawFunds(payload: { amount: number }): Promise<{ id: string; status: string; amount: number }> {
+  const res = await api.post("/payments/withdraw", payload);
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || data.error || "Failed to request withdrawal");
   return data;
 }
 

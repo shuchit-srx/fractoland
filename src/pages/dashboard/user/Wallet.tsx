@@ -1,51 +1,101 @@
 import LinkWalletCard from "@/components/wallet/LinkWalletCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { addFundsInit, formatInr, getPayments, getWalletBalance, paymentCallback, withdrawFunds, type PaymentItem } from "@/lib/dashboardApi";
 import { motion } from "framer-motion";
-import { ArrowDownLeft, ArrowUpRight, Clock, CreditCard, Download, Plus, Wallet as WalletIcon } from "lucide-react";
-import { useState } from "react";
+import { ArrowDownLeft, ArrowUpRight, Clock, CreditCard, Download, Loader2, Plus, Wallet as WalletIcon } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
-const transactions = [
-  { id: 1, type: "credit", description: "Added funds via UPI", amount: "+₹50,000", date: "Dec 12, 2024", status: "completed" },
-  { id: 2, type: "debit", description: "Investment in Green Valley A12", amount: "-₹25,000", date: "Dec 10, 2024", status: "completed" },
-  { id: 3, type: "credit", description: "ROI payout - Metro Park C3", amount: "+₹8,500", date: "Dec 5, 2024", status: "completed" },
-  { id: 4, type: "debit", description: "Investment in Sunrise Estate B7", amount: "-₹50,000", date: "Nov 28, 2024", status: "completed" },
-  { id: 5, type: "credit", description: "Added funds via Card", amount: "+₹1,00,000", date: "Nov 25, 2024", status: "completed" },
-  { id: 6, type: "debit", description: "Investment in Lake View D9", amount: "-₹75,000", date: "Nov 20, 2024", status: "completed" },
-];
-
 const Wallet = () => {
+  const [balance, setBalance] = useState(0);
+  const [transactions, setTransactions] = useState<PaymentItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [processing, setProcessing] = useState(false);
   const [showAddFunds, setShowAddFunds] = useState(false);
   const [addAmount, setAddAmount] = useState("");
   const [showWithdraw, setShowWithdraw] = useState(false);
   const [withdrawAmount, setWithdrawAmount] = useState("");
 
-  const handleAddFunds = (method: string) => {
-    if (!addAmount || parseInt(addAmount) < 1000) {
+  const load = async () => {
+    setLoading(true);
+    try {
+      const [wallet, payments] = await Promise.all([getWalletBalance(), getPayments({ limit: 50 })]);
+      setBalance(wallet.balance);
+      setTransactions(payments.items);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to load wallet");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    void load();
+  }, []);
+
+  const totals = useMemo(() => {
+    let deposited = 0;
+    let invested = 0;
+    let withdrawn = 0;
+    let pending = 0;
+    for (const tx of transactions) {
+      if (tx.status === "pending") pending += tx.amount;
+      if (tx.status !== "completed") continue;
+      if (tx.type === "add_funds" || tx.type === "royalty" || tx.type === "refund") deposited += tx.amount;
+      if (tx.type === "investment") invested += tx.amount;
+      if (tx.type === "withdrawal") withdrawn += tx.amount;
+    }
+    return { deposited, invested, withdrawn, pending };
+  }, [transactions]);
+
+  const handleAddFunds = async (method: string) => {
+    const amount = parseInt(addAmount, 10);
+    if (!addAmount || amount < 1000) {
       toast.error("Minimum amount is ₹1,000");
       return;
     }
-    toast.success(`Adding ₹${parseInt(addAmount).toLocaleString()} via ${method}...`);
-    setTimeout(() => {
-      toast.success("Funds added successfully!");
+    setProcessing(true);
+    try {
+      const init = await addFundsInit({ amount, currency: "INR", gateway: method.toLowerCase() });
+      await paymentCallback({
+        gateway_order_id: init.gateway_order_id,
+        gateway_payment_id: `pay_${Date.now()}`,
+        status: "completed",
+      });
+      toast.success(`Added ${formatInr(amount)} successfully`);
       setShowAddFunds(false);
       setAddAmount("");
-    }, 1500);
+      await load();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to add funds");
+    } finally {
+      setProcessing(false);
+    }
   };
 
-  const handleWithdraw = () => {
-    if (!withdrawAmount || parseInt(withdrawAmount) < 1000) {
+  const handleWithdraw = async () => {
+    const amount = parseInt(withdrawAmount, 10);
+    if (!withdrawAmount || amount < 1000) {
       toast.error("Minimum withdrawal is ₹1,000");
       return;
     }
-    if (parseInt(withdrawAmount) > 25000) {
+    if (amount > balance) {
       toast.error("Insufficient balance");
       return;
     }
-    toast.success("Withdrawal initiated. Funds will be credited in 2-3 business days.");
-    setShowWithdraw(false);
-    setWithdrawAmount("");
+    setProcessing(true);
+    try {
+      await withdrawFunds({ amount });
+      toast.success("Withdrawal processed successfully.");
+      setShowWithdraw(false);
+      setWithdrawAmount("");
+      await load();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to withdraw");
+    } finally {
+      setProcessing(false);
+    }
   };
 
   return (
@@ -65,7 +115,7 @@ const Wallet = () => {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div>
             <p className="text-primary-foreground/80 text-sm">Available Balance</p>
-            <p className="text-4xl font-bold mt-1">₹25,000</p>
+            <p className="text-4xl font-bold mt-1">{formatInr(balance)}</p>
             <p className="text-primary-foreground/60 text-sm mt-2">Last updated: Just now</p>
           </div>
           <div className="flex gap-3">
@@ -73,6 +123,7 @@ const Wallet = () => {
               variant="secondary"
               className="bg-white/20 hover:bg-white/30 text-white border-0"
               onClick={() => setShowAddFunds(true)}
+              disabled={processing}
             >
               <Plus className="w-4 h-4 mr-2" />
               Add Funds
@@ -81,6 +132,7 @@ const Wallet = () => {
               variant="secondary"
               className="bg-white/20 hover:bg-white/30 text-white border-0"
               onClick={() => setShowWithdraw(true)}
+              disabled={processing}
             >
               <ArrowUpRight className="w-4 h-4 mr-2" />
               Withdraw
@@ -101,7 +153,7 @@ const Wallet = () => {
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Total Deposited</p>
-              <p className="font-semibold text-foreground">₹7,50,000</p>
+              <p className="font-semibold text-foreground">{formatInr(totals.deposited)}</p>
             </div>
           </div>
         </div>
@@ -112,7 +164,7 @@ const Wallet = () => {
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Total Invested</p>
-              <p className="font-semibold text-foreground">₹5,50,000</p>
+              <p className="font-semibold text-foreground">{formatInr(totals.invested)}</p>
             </div>
           </div>
         </div>
@@ -123,7 +175,7 @@ const Wallet = () => {
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Total Withdrawn</p>
-              <p className="font-semibold text-foreground">₹1,75,000</p>
+              <p className="font-semibold text-foreground">{formatInr(totals.withdrawn)}</p>
             </div>
           </div>
         </div>
@@ -134,7 +186,7 @@ const Wallet = () => {
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Pending</p>
-              <p className="font-semibold text-foreground">₹0</p>
+              <p className="font-semibold text-foreground">{formatInr(totals.pending)}</p>
             </div>
           </div>
         </div>
@@ -151,7 +203,13 @@ const Wallet = () => {
         </div>
 
         <div className="space-y-3">
-          {transactions.map((tx, index) => (
+          {loading ? (
+            <div className="py-10 flex items-center justify-center">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : transactions.length === 0 ? (
+            <p className="text-sm text-muted-foreground py-4">No transactions yet.</p>
+          ) : transactions.map((tx, index) => (
             <motion.div
               key={tx.id}
               initial={{ opacity: 0, x: -20 }}
@@ -160,22 +218,22 @@ const Wallet = () => {
               className="flex items-center justify-between p-4 bg-secondary/30 rounded-xl hover:bg-secondary/50 transition-colors"
             >
               <div className="flex items-center gap-4">
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${tx.type === "credit" ? "bg-green-500/10" : "bg-red-500/10"
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${tx.type === "add_funds" || tx.type === "royalty" || tx.type === "refund" ? "bg-green-500/10" : "bg-red-500/10"
                   }`}>
-                  {tx.type === "credit" ? (
+                  {tx.type === "add_funds" || tx.type === "royalty" || tx.type === "refund" ? (
                     <ArrowDownLeft className="w-5 h-5 text-green-600" />
                   ) : (
                     <ArrowUpRight className="w-5 h-5 text-red-600" />
                   )}
                 </div>
                 <div>
-                  <p className="font-medium text-foreground text-sm">{tx.description}</p>
-                  <p className="text-xs text-muted-foreground">{tx.date}</p>
+                  <p className="font-medium text-foreground text-sm">{tx.description || tx.type.replace("_", " ")}</p>
+                  <p className="text-xs text-muted-foreground">{new Date(tx.created_at).toLocaleString()}</p>
                 </div>
               </div>
               <div className="text-right">
-                <p className={`font-semibold ${tx.type === "credit" ? "text-green-600" : "text-red-600"}`}>
-                  {tx.amount}
+                <p className={`font-semibold ${tx.type === "add_funds" || tx.type === "royalty" || tx.type === "refund" ? "text-green-600" : "text-red-600"}`}>
+                  {(tx.type === "add_funds" || tx.type === "royalty" || tx.type === "refund" ? "+" : "-") + formatInr(tx.amount)}
                 </p>
                 <p className="text-xs text-muted-foreground capitalize">{tx.status}</p>
               </div>
@@ -212,6 +270,7 @@ const Wallet = () => {
             <div className="space-y-3 mb-6">
               <button
                 onClick={() => handleAddFunds("UPI")}
+                disabled={processing}
                 className="w-full p-4 bg-secondary/50 rounded-xl flex items-center gap-3 hover:bg-secondary transition-colors"
               >
                 <div className="w-10 h-10 bg-green-500/10 rounded-lg flex items-center justify-center">
@@ -221,6 +280,7 @@ const Wallet = () => {
               </button>
               <button
                 onClick={() => handleAddFunds("Card")}
+                disabled={processing}
                 className="w-full p-4 bg-secondary/50 rounded-xl flex items-center gap-3 hover:bg-secondary transition-colors"
               >
                 <div className="w-10 h-10 bg-blue-500/10 rounded-lg flex items-center justify-center">
@@ -230,7 +290,7 @@ const Wallet = () => {
               </button>
             </div>
 
-            <Button variant="ghost" className="w-full" onClick={() => setShowAddFunds(false)}>
+            <Button variant="ghost" className="w-full" onClick={() => setShowAddFunds(false)} disabled={processing}>
               Cancel
             </Button>
           </motion.div>
@@ -249,7 +309,7 @@ const Wallet = () => {
 
             <div className="bg-secondary/50 rounded-xl p-4 mb-6">
               <p className="text-sm text-muted-foreground">Available Balance</p>
-              <p className="text-2xl font-bold text-foreground">₹25,000</p>
+              <p className="text-2xl font-bold text-foreground">{formatInr(balance)}</p>
             </div>
 
             <div className="mb-6">
@@ -264,7 +324,7 @@ const Wallet = () => {
                   onChange={(e) => setWithdrawAmount(e.target.value)}
                 />
               </div>
-              <p className="text-xs text-muted-foreground mt-1">Minimum: ₹1,000 • Max: ₹25,000</p>
+              <p className="text-xs text-muted-foreground mt-1">Minimum: ₹1,000 • Max: {formatInr(balance)}</p>
             </div>
 
             <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6">
@@ -274,11 +334,11 @@ const Wallet = () => {
             </div>
 
             <div className="flex gap-3">
-              <Button variant="outline" className="flex-1" onClick={() => setShowWithdraw(false)}>
+              <Button variant="outline" className="flex-1" onClick={() => setShowWithdraw(false)} disabled={processing}>
                 Cancel
               </Button>
-              <Button className="flex-1" onClick={handleWithdraw}>
-                Withdraw
+              <Button className="flex-1" onClick={handleWithdraw} disabled={processing}>
+                {processing ? "Processing..." : "Withdraw"}
               </Button>
             </div>
           </motion.div>
